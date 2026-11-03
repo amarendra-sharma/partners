@@ -58,6 +58,8 @@ textarea.in{min-height:90px;resize:vertical}
 .how{list-style:none;padding:0;margin:0;counter-reset:s;max-width:46ch}
 .how li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:12px;padding:14px 0;border-top:1px solid rgba(255,255,255,.12)}
 .how li::before{content:counter(s);font-family:var(--serif);font-size:20px;color:var(--gold)}
+.how.plain li{grid-template-columns:1fr}
+.how.plain li::before{content:none}
 .how b{color:#fff;display:block;font-weight:600}
 .how span{color:#AFBACB;font-size:14px}
 .gate-side .foot{margin-top:auto;padding-top:32px;font-size:13px;color:#8D9AB0}
@@ -317,7 +319,8 @@ var ICON = {
   users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 15c1.6.5 2.7 2 3 5"/></svg>',
   desk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
-  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H4"/></svg>'
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H4"/></svg>',
+  card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>'
 };
 var STAGES = [
   { k: 'contacted', label: 'Contacted', help: 'You have reached out.' },
@@ -344,17 +347,53 @@ function openLayer(kind, title, sub, bodyHtml, footHtml) {
   return $('#layer section');
 }
 
-/* ---------------- referral redirect ---------------- */
+/* ---------------- partner link landing page ---------------- */
 (function referral() {
   var m = /[?&]r=([A-Za-z0-9]+)/.exec(window.location.search);
   if (!m) return;
-  var code = m[1].toUpperCase();
-  document.getElementById('app').innerHTML = '<div class="center-card"><p>Opening MacroNations…</p></div>';
-  var go = function () { window.location.replace(SITE_URL + '/?ref=' + encodeURIComponent(code)); };
-  var t = setTimeout(go, 1500);
-  sb.rpc('mp_log_click', { p_code: code, p_path: window.location.pathname, p_referrer: document.referrer || '' })
-    .then(function () { clearTimeout(t); go(); }, function () { clearTimeout(t); go(); });
   window.__referral = true;
+  var code = m[1].toUpperCase();
+  var dest = SITE_URL + '/?ref=' + encodeURIComponent(code);
+  var go = function () { window.location.replace(dest); };
+  sb.rpc('mp_log_click', { p_code: code, p_path: window.location.pathname, p_referrer: document.referrer || '' });
+  document.getElementById('app').innerHTML = '<div class="center-card"><p>Opening MacroNations…</p></div>';
+  sb.rpc('mp_referral_info', { p_code: code }).then(function (r) {
+    var info = r && r.data ? r.data : null;
+    if (!info || !info.first_name) { go(); return; }
+    var who = esc(info.first_name);
+    document.getElementById('app').innerHTML = '<div class="gate">' +
+      '<aside class="gate-side"><div class="brand"><span class="brand-mark" aria-hidden="true">M</span> MacroNations</div>' +
+      '<h1>A complete online course for economics instructors.</h1>' +
+      '<p class="lede">An interactive textbook, auto-graded quizzes and exams, simulation games students play, and a gradebook, in one place and at a low cost to students.</p>' +
+      '<ul class="how plain">' +
+      '<li><div><b>Courses</b><span>Microeconomics, Macroeconomics, Game Theory, Econometrics, International Trade, Finance, and Economics &amp; Film.</span></div></li>' +
+      '<li><div><b>Your own section</b><span>Set up a course for your class in about ten minutes and review everything before students join.</span></div></li>' +
+      '</ul><div class="foot">MacroNations LLC · New York</div></aside>' +
+      '<main class="gate-main"><div class="gate-box">' +
+      '<h2>' + who + ' invited you to MacroNations</h2>' +
+      '<p class="sub">Leave your details and ' + who + ' will help you set up a course and answer questions. Or go straight to the courses.</p>' +
+      '<form id="rfF" novalidate>' +
+      '<div class="field"><label class="f" for="rfN">Your name</label><input class="in" id="rfN" autocomplete="name"></div>' +
+      '<div class="field"><label class="f" for="rfE">Email</label><input class="in" id="rfE" type="email" autocomplete="email"></div>' +
+      '<div class="field"><label class="f" for="rfI">College or university</label><input class="in" id="rfI" autocomplete="organization"></div>' +
+      '<div class="field"><label class="f" for="rfC">Course you teach (optional)</label><input class="in" id="rfC" placeholder="e.g. ECON 101 Principles of Microeconomics"></div>' +
+      '<p class="err" id="rfErr" role="alert"></p>' +
+      '<button class="btn primary" id="rfBtn" style="width:100%;padding:11px">Send my details and continue</button></form>' +
+      '<p style="margin-top:16px;font-size:14px;text-align:center"><a href="' + esc(dest) + '" id="rfSkip">Skip and go to MacroNations</a></p>' +
+      '<p class="hint" style="text-align:center">We share your name, email and institution only with ' + who + ', who works with MacroNations.</p>' +
+      '</div></main></div>';
+    $('#rfF').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var out = $('#rfErr');
+      if (!val('rfN') || !val('rfI')) { out.textContent = 'Please enter your name and institution.'; return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('rfE'))) { out.textContent = 'Please enter a valid email address.'; return; }
+      var btn = $('#rfBtn'); busy(btn, true, 'Sending…');
+      var s = await sb.rpc('mp_referral_signup', { p_code: code, p_name: val('rfN'), p_email: val('rfE'), p_institution: val('rfI'), p_course: val('rfC') });
+      if (s.error) { busy(btn, false); out.textContent = errMsg(s.error); return; }
+      btn.textContent = 'Thank you. Opening MacroNations…';
+      setTimeout(go, 900);
+    });
+  }, go);
 })();
 
 /* ---------------- boot & auth ---------------- */
@@ -382,7 +421,7 @@ async function loadContext() {
 }
 
 function route() {
-  if (S.isAdmin) { if (['overview', 'partners', 'desk', 'revenue', 'atoolkit', 'settings'].indexOf(S.view) < 0) S.view = 'overview'; return renderShell(); }
+  if (S.isAdmin) { if (['overview', 'partners', 'desk', 'revenue', 'payments', 'atoolkit', 'settings'].indexOf(S.view) < 0) S.view = 'overview'; return renderShell(); }
   var st = S.me ? S.me.status : 'none';
   if (st === 'none' || st === 'rejected') return renderApply();
   if (st === 'applied') return renderPending();
@@ -545,7 +584,7 @@ async function renderSign() {
 function navDef() {
   if (S.isAdmin) return [
     ['overview', 'Overview', ICON.home], ['partners', 'Partners', ICON.users], ['desk', 'Deal desk', ICON.desk],
-    ['revenue', 'Courses & revenue', ICON.money], ['atoolkit', 'Toolkit', ICON.kit], ['settings', 'Settings', ICON.gear]];
+    ['revenue', 'Courses & revenue', ICON.money], ['payments', 'Stripe payments', ICON.card], ['atoolkit', 'Toolkit', ICON.kit], ['settings', 'Settings', ICON.gear]];
   return [['home', 'Home', ICON.home], ['pipeline', 'Professors', ICON.pipe], ['toolkit', 'Toolkit', ICON.kit], ['earnings', 'Earnings', ICON.money], ['agreement', 'Agreement', ICON.doc]];
 }
 function renderShell() {
@@ -565,7 +604,7 @@ function badge(v, n) { var b = $('#bdg-' + v); if (!b) return; if (n > 0) { b.te
 function setView(html) { $('#view').innerHTML = html; }
 function loading() { setView('<p style="color:var(--ink-2)">Loading…</p>'); }
 function renderView() {
-  var map = { home: pHome, pipeline: pPipeline, toolkit: pToolkit, earnings: pEarnings, agreement: pAgreement,
+  var map = { home: pHome, pipeline: pPipeline, toolkit: pToolkit, earnings: pEarnings, agreement: pAgreement, payments: aPayments,
     overview: aOverview, partners: aPartners, desk: aDesk, revenue: aRevenue, atoolkit: aToolkit, settings: aSettings };
   (map[S.view] || pHome)();
 }
@@ -613,7 +652,7 @@ async function pHome() {
     '<section class="hero-line"><div><p class="big">' + headline + '</p><p class="small">' + lifetime + '</p></div><div class="ladder">' + ladder + '</div></section>' +
     '<div class="stats"><div class="stat"><div class="v">' + (sc.courses || 0) + '</div><div class="k">Courses adopted</div></div><div class="stat"><div class="v">' + (sc.leads_open || 0) + '</div><div class="k">Professors in progress</div></div><div class="stat"><div class="v">' + (sc.demos || 0) + '</div><div class="k">Demos held</div></div><div class="stat"><div class="v">' + (sc.clicks_30d || 0) + '</div><div class="k">Link visits, 30 days</div></div></div>' +
     '<div class="two"><div><h2 class="section-title">Coming up</h2><div class="list">' + nextHtml + '</div></div>' +
-    '<div><h2 class="section-title">Your link</h2><div class="linkcard"><div class="linkrow"><code>' + esc(myLink()) + '</code><button class="btn" id="cpLink">Copy</button></div><p class="hint" style="margin:10px 0 0">Share it in emails and slides. Visits are counted here, and professors who sign up through it are credited to you.</p></div>' +
+    '<div><h2 class="section-title">Your link</h2><div class="linkcard"><div class="linkrow"><code>' + esc(myLink()) + '</code><button class="btn" id="cpLink">Copy</button></div><p class="hint" style="margin:10px 0 0">Share it in emails and slides. Visits are counted here, and professors who leave their details on it are added to your list automatically.</p></div>' +
     (lbHtml ? '<h2 class="section-title">Leaderboard</h2>' + lbHtml : '') + '</div></div>');
   $('#cpLink').addEventListener('click', function () { copyText(myLink(), 'Link'); });
   $('#addLeadTop').addEventListener('click', addLeadModal);
@@ -633,6 +672,7 @@ async function pPipeline() {
     else if (l.review_status === 'rejected') tags += '<span class="tag warn">Credited elsewhere</span>';
     else if (l.stage !== 'adopted' && l.stage !== 'lost') { var pu = dParse(l.protected_until); tags += '<span class="tag' + (pu < t0 ? ' amber' : '') + '">' + (pu < t0 ? 'Reservation ended' : 'Reserved to ' + dshort(l.protected_until)) + '</span>'; }
     if (l.stage === 'adopted') tags += '<span class="tag money">Earning</span>';
+    if (l.source === 'link') tags += '<span class="tag navy">Via your link</span>';
     if (l.next_step_date && l.stage !== 'adopted' && l.stage !== 'lost') { var d = dParse(l.next_step_date); tags += '<span class="due' + (d < t0 ? ' late' : '') + '">' + dshort(l.next_step_date) + '</span>'; }
     var drag = l.stage !== 'adopted' && l.review_status !== 'rejected';
     return '<button class="lead" data-lead="' + l.id + '"' + (drag ? ' draggable="true"' : '') + '><div class="n">' + esc(l.prof_name) + '</div><div class="i">' + esc(l.institution) + (l.course_taught ? ' · ' + esc(l.course_taught) : '') + '</div><div class="m">' + tags + '</div></button>';
@@ -756,7 +796,7 @@ async function pToolkit() {
   }).join('');
   setView('<div class="page-head"><div><h1>Toolkit</h1><p>Your link, a QR code for slides and handouts, and ready-to-send materials.</p></div></div>' +
     '<div class="two" style="grid-template-columns:1fr 240px"><div class="linkcard"><span class="f" style="display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px">Your personal link</span><div class="linkrow"><code>' + esc(myLink()) + '</code><button class="btn" id="cpLink2">Copy</button></div>' +
-    '<p class="hint" style="margin:10px 0 0">Your partner code is <span class="codechip">' + esc(S.me.code) + '</span>. Professors can also enter it when they set up their course.</p></div>' +
+    '<p class="hint" style="margin:10px 0 0">Your partner code is <span class="codechip">' + esc(S.me.code) + '</span>. Professors who open your link can leave their details, and they appear in your list as reserved for you.</p></div>' +
     '<div class="linkcard" style="text-align:center"><div id="qr" style="margin:0 auto" aria-label="QR code for your link" role="img"></div><button class="btn sm" id="dlQr" style="margin-top:10px">Download QR</button></div></div>' +
     '<h2 class="section-title">Materials</h2>' + (html || '<p class="hint">Materials will appear here.</p>'));
   $('#cpLink2').addEventListener('click', function () { copyText(myLink(), 'Link'); });
@@ -843,8 +883,13 @@ async function pAgreement() {
    ADMIN VIEWS
    ====================================================================== */
 async function adminBadges() {
-  var o = await sb.rpc('mp_admin_overview'); var d = o.data || {};
-  badge('partners', (d.applications || 0)); badge('desk', d.conflicts || 0); return d;
+  var res = await Promise.all([sb.rpc('mp_admin_overview'), sb.rpc('mp_admin_course_suggestions'), sb.rpc('mp_admin_sync_status')]);
+  var d = res[0].data || {};
+  d.suggestions = (res[1].data || []).length;
+  d.sync = res[2].data || {};
+  badge('partners', (d.applications || 0)); badge('desk', (d.conflicts || 0) + d.suggestions);
+  badge('payments', d.sync.last_error ? 1 : 0);
+  return d;
 }
 
 async function aOverview() {
@@ -856,7 +901,9 @@ async function aOverview() {
   if (d.applications) attn.push(['partners', d.applications + ' application' + (d.applications > 1 ? 's' : '') + ' to review', 'Approve or decline new partners.']);
   if (d.conflicts) attn.push(['desk', d.conflicts + ' professor' + (d.conflicts > 1 ? 's' : '') + ' claimed twice', 'Decide which partner is credited.']);
   if (d.awaiting_sign) attn.push(['partners', d.awaiting_sign + ' approved partner' + (d.awaiting_sign > 1 ? 's' : '') + ' waiting to sign', S.settings && !S.settings.agreements_open ? 'Signing is switched off in Settings until the agreement is reviewed.' : 'They have been approved and need to sign.']);
+  if (d.suggestions) attn.push(['desk', d.suggestions + ' new course' + (d.suggestions > 1 ? 's' : '') + ' from partners’ professors', 'Check and credit them on the Deal desk.']);
   if (d.owed_cents) attn.push(['revenue', money(d.owed_cents) + ' in commissions to approve or pay', 'Review the statement under Courses & revenue.']);
+  if (d.sync && d.sync.last_error) attn.push(['payments', 'The last Stripe check failed', String(d.sync.last_error).slice(0, 120)]);
   setView('<div class="page-head"><div><h1>Partner program</h1><p>Everything partners are doing, and what needs your decision.</p></div></div>' +
     (S.settings && !S.settings.agreements_open ? '<div class="callout amber"><b>Agreement signing is off.</b> Approved partners can read the draft but cannot sign until you switch it on in Settings — do that once counsel has reviewed the agreement.</div>' : '') +
     '<div class="tiles"><div class="tile"><div class="v">' + (d.active || 0) + '</div><div class="k">Active partners</div></div><div class="tile"><div class="v">' + (d.leads_open || 0) + '</div><div class="k">Professors in progress</div></div><div class="tile"><div class="v">' + (d.courses || 0) + '</div><div class="k">Courses credited</div></div><div class="tile"><div class="v" style="color:var(--money)">' + money(d.revenue_cents) + '</div><div class="k">Net revenue via partners</div></div></div>' +
@@ -931,15 +978,26 @@ async function openPartner(id, ps) {
 
 async function aDesk() {
   loading(); adminBadges();
-  var r = await sb.rpc('mp_admin_leads');
+  var res = await Promise.all([sb.rpc('mp_admin_leads'), sb.rpc('mp_admin_course_suggestions')]);
+  var r = res[0];
   if (r.error) { setView('<p class="err">' + esc(errMsg(r.error)) + '</p>'); return; }
   var ls = r.data || [];
+  var sug = res[1].data || [];
+  var sugHtml = sug.length ? '<h2 class="section-title" style="margin-top:4px">New courses to credit</h2>' +
+    '<p class="hint" style="margin:-4px 0 10px">These courses were set up by professors that partners registered, within their reservation period. Check each one and credit it.</p>' +
+    '<div class="table-wrap" style="margin-bottom:26px"><table class="t"><caption class="sr-only">New courses to credit</caption><thead><tr><th scope="col">Course</th><th scope="col">Instructor</th><th scope="col">Partner</th><th scope="col">Created</th><th scope="col"></th></tr></thead><tbody>' +
+    sug.map(function (s, i) {
+      return '<tr><td><b>' + esc(s.course_title || 'Untitled course') + '</b><div class="hint" style="margin:0">' + esc(PRODUCTS[s.product] || s.product) + (s.course_term ? ' · ' + esc(s.course_term) : '') + '</div></td>' +
+        '<td>' + esc(s.prof_name) + '<div class="hint" style="margin:0">' + esc(s.institution) + '</div></td><td>' + esc(s.partner_name) + '<div class="hint" style="margin:0">registered ' + dshort(s.lead_created) + '</div></td>' +
+        '<td>' + dfmt(s.course_created) + '</td><td class="acts"><button class="btn sm" data-sdis="' + i + '">Not this one</button> <button class="btn sm primary" data-scr="' + i + '">Credit ' + esc(firstName(s.partner_name)) + '</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '';
   var flt = S.cache.dFilter || (ls.some(function (l) { return l.review_status === 'conflict'; }) ? 'conflict' : 'open');
   var F = [['conflict', 'Claimed twice'], ['open', 'In progress'], ['pilot', 'In pilot'], ['adopted', 'Adopted'], ['all', 'All']];
   function match(l, f) { if (f === 'all') return true; if (f === 'conflict') return l.review_status === 'conflict'; if (f === 'open') return ['contacted', 'demo', 'pilot'].indexOf(l.stage) >= 0 && l.review_status !== 'rejected'; return l.stage === f; }
   var list = ls.filter(function (l) { return match(l, flt); });
   var rvTag = { clear: '', conflict: '<span class="tag warn">Claimed twice</span>', approved: '<span class="tag money">Confirmed</span>', rejected: '<span class="tag">Not credited</span>' };
   setView('<div class="page-head"><div><h1>Deal desk</h1><p>Every professor partners have registered. Settle double claims and credit adopted courses.</p></div></div>' +
+    sugHtml + (sugHtml ? '<h2 class="section-title">Registered professors</h2>' : '') +
     '<div class="filters" role="group" aria-label="Filter">' + F.map(function (x) { var n = ls.filter(function (l) { return match(l, x[0]); }).length; return '<button data-f="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + ' (' + n + ')</button>'; }).join('') + '</div>' +
     (list.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Registered professors</caption><thead><tr><th scope="col">Professor</th><th scope="col">Partner</th><th scope="col">Course</th><th scope="col">Stage</th><th scope="col">Reserved to</th><th scope="col"></th></tr></thead><tbody>' +
       list.map(function (l) {
@@ -958,20 +1016,30 @@ async function aDesk() {
     var r2 = await sb.rpc('mp_admin_review_lead', { p_lead: b.dataset.ext, p_decision: 'keep', p_note: null, p_extend_days: 30 });
     if (r2.error) { toast(errMsg(r2.error), true); return; } toast('Reservation extended to ' + dfmt(r2.data.protected_until)); aDesk(); }); });
   $$('[data-cr]').forEach(function (b) { b.addEventListener('click', function () { var l = null; ls.forEach(function (x) { if (x.id === b.dataset.cr) l = x; }); creditModal(l); }); });
+  $$('[data-scr]').forEach(function (b) { b.addEventListener('click', function () {
+    var s = sug[+b.dataset.scr], l = null; ls.forEach(function (x) { if (x.id === s.lead_id) l = x; });
+    if (!l) { toast('That professor is no longer in the list. Reload the page.', true); return; }
+    creditModal(l, { product: s.product, course_id: s.course_id, label: (s.course_title || l.course_taught || 'Course') + ' — ' + l.institution, start: String(s.course_created).slice(0, 10) });
+  }); });
+  $$('[data-sdis]').forEach(function (b) { b.addEventListener('click', async function () {
+    var s = sug[+b.dataset.sdis];
+    var r2 = await sb.rpc('mp_admin_dismiss_suggestion', { p_product: s.product, p_course_id: s.course_id, p_lead_id: s.lead_id });
+    if (r2.error) { toast(errMsg(r2.error), true); return; } toast('Hidden'); aDesk(); }); });
 }
 
-async function creditModal(lead) {
+async function creditModal(lead, pre) {
+  pre = pre || {};
   var pr = await sb.from('mp_partners').select('id,full_name,rate_override,status').in('status', ['active', 'approved']).order('full_name');
   var ps = pr.data || [];
   var leads = lead ? [] : ((await sb.rpc('mp_admin_leads')).data || []).filter(function (l) { return l.stage !== 'adopted' && l.review_status !== 'rejected'; });
-  var prodOpts = Object.keys(PRODUCTS).map(function (k) { return '<option value="' + k + '">' + PRODUCTS[k] + '</option>'; }).join('');
+  var prodOpts = Object.keys(PRODUCTS).map(function (k) { return '<option value="' + k + '"' + (pre.product === k ? ' selected' : '') + '>' + PRODUCTS[k] + '</option>'; }).join('');
   openLayer('modal', 'Credit a course to a partner', lead ? esc(lead.prof_name) + ' · ' + esc(lead.institution) + ' · ' + esc(lead.partner_name) : 'Use this when a course is live.',
     (lead ? '' : '<div class="field"><label class="f" for="crP">Partner</label><select class="in" id="crP">' + ps.map(function (p) { return '<option value="' + p.id + '">' + esc(p.full_name) + '</option>'; }).join('') + '</select></div>' +
       '<div class="field"><label class="f" for="crL">Professor (optional)</label><select class="in" id="crL"><option value="">— Not from a registered professor —</option></select></div>') +
     '<div class="row2"><div class="field"><label class="f" for="crProd">Course</label><select class="in" id="crProd">' + prodOpts + '</select></div>' +
-    '<div class="field"><label class="f" for="crCid">Course ID in that console</label><input class="in" id="crCid" placeholder="Paste the course id"><div class="hint">Prevents the same section being credited twice.</div></div></div>' +
-    '<div class="field"><label class="f" for="crLab">Label partners will see</label><input class="in" id="crLab" value="' + (lead ? esc((lead.course_taught || 'Course') + ' — ' + lead.institution) : '') + '"></div>' +
-    '<div class="row2"><div class="field"><label class="f" for="crStart">Earning starts</label><input class="in" id="crStart" type="date" value="' + isoDay(today()) + '"><div class="hint">Ends ' + (S.settings ? S.settings.attribution_months : 24) + ' months later.</div></div>' +
+    '<div class="field"><label class="f" for="crCid">Course ID in that console</label><input class="in" id="crCid" placeholder="Paste the course id" value="' + esc(pre.course_id || '') + '"><div class="hint">Needed for student payments to be matched automatically.</div></div></div>' +
+    '<div class="field"><label class="f" for="crLab">Label partners will see</label><input class="in" id="crLab" value="' + esc(pre.label || (lead ? (lead.course_taught || 'Course') + ' — ' + lead.institution : '')) + '"></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="crStart">Earning starts</label><input class="in" id="crStart" type="date" value="' + esc(pre.start || isoDay(today())) + '"><div class="hint">Ends ' + (S.settings ? S.settings.attribution_months : 24) + ' months later.</div></div>' +
     '<div class="field"><label class="f" for="crRate">Rate for this course (%)</label><input class="in" id="crRate" type="number" step="0.5" min="0" max="100" placeholder="Partner’s current rate"></div></div>' +
     '<div class="field"><label class="f" for="crNote">Internal note (optional)</label><input class="in" id="crNote"></div><p class="err" id="crErr" role="alert"></p>',
     '<button class="btn" data-close>Cancel</button><button class="btn primary" id="crBtn">Credit course</button>');
@@ -1012,7 +1080,7 @@ async function aRevenue() {
     (lf.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Commission statement</caption><thead><tr><th scope="col"><input type="checkbox" id="selAll" aria-label="Select all"></th><th scope="col">Date</th><th scope="col">Partner</th><th scope="col">Course</th><th scope="col">Description</th><th scope="col" class="r">Net</th><th scope="col" class="r">Rate</th><th scope="col" class="r">Commission</th><th scope="col">Status</th></tr></thead><tbody>' +
       lf.map(function (x) { return '<tr><td>' + (x.status !== 'paid' && x.status !== 'void' ? '<input type="checkbox" class="lsel" value="' + x.id + '" aria-label="Select">' : '') + '</td><td>' + dshort(x.earned_on) + '</td><td>' + esc(names[x.partner_id] || '') + '</td><td>' + esc(labels[x.attribution_id] || '') + '</td><td>' + esc(x.description || '') + (x.source_ref ? '<div class="hint" style="margin:0">' + esc(x.source) + ' ' + esc(x.source_ref) + '</div>' : '') + '</td><td class="r num">' + money(x.net_cents) + '</td><td class="r num">' + pct(x.rate) + '</td><td class="r num"><b>' + money(x.commission_cents) + '</b></td><td>' + (stTag[x.status] || '') + (x.payout_ref ? '<div class="hint" style="margin:0">' + esc(x.payout_ref) + '</div>' : '') + '</td></tr>'; }).join('') +
       '</tbody></table></div>' : '<div class="list"><div class="empty">Nothing in this view.</div></div>') +
-    '<p class="hint" style="margin-top:12px">Student payments through Stripe will be recorded here automatically in the next phase. For now, record institutional invoices and any Stripe payments by hand with “Record revenue”.</p>');
+    '<p class="hint" style="margin-top:12px">Student payments through Stripe are added here automatically every hour (see Stripe payments). Use “Record revenue” for institutional invoices and other payments made outside Stripe.</p>');
   $('#crNew').addEventListener('click', function () { creditModal(null); });
   $$('[data-lf]').forEach(function (b) { b.addEventListener('click', function () { S.cache.lFilter = b.dataset.lf; aRevenue(); }); });
   var sa = $('#selAll'); if (sa) sa.addEventListener('change', function () { $$('.lsel').forEach(function (c) { c.checked = sa.checked; }); });
@@ -1028,6 +1096,63 @@ async function aRevenue() {
     var r = await sb.rpc('mp_admin_set_ledger_status', { p_ids: ids, p_status: b.dataset.bulk, p_payout_ref: ref || null });
     if (r.error) { toast(errMsg(r.error), true); return; } toast(r.data + ' row(s) updated'); aRevenue(); }); });
   $$('[data-rev]').forEach(function (b) { b.addEventListener('click', function () { var a = null; at.forEach(function (x) { if (x.id === b.dataset.rev) a = x; }); revenueModal(a, names[a.partner_id]); }); });
+}
+
+async function aPayments() {
+  loading(); adminBadges();
+  var flt = S.cache.payFilter || 'credited';
+  var res = await Promise.all([sb.rpc('mp_admin_sync_status'), sb.rpc('mp_admin_payments', { p_status: flt === 'all' ? null : flt }),
+    sb.from('mp_attributions').select('id,course_label,partner_id,status').neq('status', 'void').order('course_label'), sb.from('mp_partners').select('id,full_name')]);
+  if (res[0].error) { setView('<p class="err">' + esc(errMsg(res[0].error)) + '</p>'); return; }
+  var st = res[0].data || {}, pays = res[1].data || [], ats = res[2].data || [], names = {};
+  (res[3].data || []).forEach(function (p) { names[p.id] = p.full_name; });
+  if (S.cache.payFilter == null && (st.credited || 0) === 0 && (st.open || 0) > 0) { S.cache.payFilter = 'open'; return aPayments(); }
+  var lc = st.last_counts || {};
+  var syncLine = st.last_ok
+    ? 'Last checked ' + ago(st.last_ok) + (lc.payments_saved != null ? ' · ' + lc.payments_saved + ' payment' + (lc.payments_saved === 1 ? '' : 's') + ' read from Stripe' : '') + '. Checks again automatically every hour.'
+    : 'Not checked yet. Use “Check Stripe now”, then it runs every hour on its own.';
+  var statusTag = { credited: '<span class="tag money">Credited</span>', course_not_credited: '<span class="tag amber">Course not credited</span>', unmatched: '<span class="tag warn">No course found</span>', outside_window: '<span class="tag">Outside window</span>', ignored: '<span class="tag">Set aside</span>', 'new': '<span class="tag">New</span>' };
+  var F = [['credited', 'Credited to partners'], ['open', 'Needs a look'], ['ignored', 'Set aside'], ['all', 'All']];
+  var atOpts = '<option value="">Credit to…</option>' + ats.map(function (a) { return '<option value="' + a.id + '">' + esc(a.course_label) + ' (' + esc(firstName(names[a.partner_id] || '')) + ')</option>'; }).join('');
+  setView('<div class="page-head"><div><h1>Stripe payments</h1><p>Student payments read from Stripe. Payments for courses credited to a partner earn commission automatically.</p></div><button class="btn primary" id="syncNow">Check Stripe now</button></div>' +
+    (st.last_error ? '<div class="callout warn"><b>The last check failed:</b> ' + esc(st.last_error) + '</div>' : '') +
+    '<div class="tiles"><div class="tile"><div class="v">' + (st.total || 0) + '</div><div class="k">Payments read</div></div><div class="tile"><div class="v" style="color:var(--money)">' + (st.credited || 0) + '</div><div class="k">Credited to partners</div></div><div class="tile"><div class="v">' + (st.not_credited_courses || 0) + '</div><div class="k">Courses paying but not credited</div></div><div class="tile"><div class="v">' + (st.open || 0) + '</div><div class="k">Payments that need a look</div></div></div>' +
+    '<p class="hint" style="margin:10px 0 18px">' + syncLine + '</p>' +
+    '<div class="filters" role="group" aria-label="Filter payments">' + F.map(function (x) { return '<button data-pf="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    (flt === 'open' ? '<p class="hint" style="margin:-4px 0 10px">Most of these are simply courses no partner brought in, which is expected. Credit one only if a partner should earn on it.</p>' : '') +
+    (pays.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Stripe payments</caption><thead><tr><th scope="col">Date</th><th scope="col">Student</th><th scope="col">Course</th><th scope="col" class="r">Amount</th><th scope="col" class="r">Fees</th><th scope="col" class="r">Commission</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>' +
+      pays.map(function (p) {
+        var course = p.course_label ? esc(p.course_label) : (p.product ? esc(PRODUCTS[p.product] || p.product) : '') + (p.course_id ? '<div class="hint" style="margin:0">' + esc(p.course_id) + '</div>' : '');
+        var acts = '';
+        if (p.match_status !== 'credited') {
+          acts = p.match_status === 'ignored' ? '<button class="btn sm" data-unign="' + esc(p.id) + '">Restore</button>'
+            : '<select class="in" style="width:auto;padding:5px 8px;font-size:13px" data-asg="' + esc(p.id) + '" aria-label="Credit this payment to a course">' + atOpts + '</select> <button class="btn sm" data-ign="' + esc(p.id) + '">Set aside</button>';
+        }
+        return '<tr><td>' + dshort(p.created_at_stripe) + '</td><td>' + esc(p.email || '—') + '</td><td>' + course + (p.match_note ? '<div class="hint" style="margin:2px 0 0">' + esc(p.match_note) + '</div>' : '') + '</td>' +
+          '<td class="r num">' + money(p.amount_cents) + (p.refunded_cents ? '<div class="hint" style="margin:0;color:var(--warn)">−' + money(p.refunded_cents) + ' refunded</div>' : '') + '</td><td class="r num">' + (p.fees_cents == null ? '—' : money(p.fees_cents)) + '</td>' +
+          '<td class="r num">' + (p.commission_cents != null ? '<b>' + money(p.commission_cents) + '</b><div class="hint" style="margin:0">' + esc(p.partner_name || '') + '</div>' : '') + '</td><td>' + (statusTag[p.match_status] || esc(p.match_status)) + '</td><td class="acts">' + acts + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<div class="list"><div class="empty">' + (st.total ? 'Nothing in this view.' : 'No payments read yet. Click “Check Stripe now”.') + '</div></div>'));
+  $('#syncNow').addEventListener('click', async function () {
+    var btn = this; busy(btn, true, 'Checking Stripe…');
+    var r = await sb.functions.invoke('mp-stripe-sync', { body: { source: 'admin' } });
+    busy(btn, false);
+    var d = r.data || {};
+    if (r.error || d.ok === false) {
+      var msg = d.error; if (!msg && r.error && r.error.context && r.error.context.json) { try { msg = (await r.error.context.json()).error; } catch (e) {} }
+      toast('Check failed: ' + (msg || errMsg(r.error)), true); aPayments(); return;
+    }
+    toast('Read ' + (d.payments_saved || 0) + ' payment(s); ' + (d.credited || 0) + ' newly credited'); aPayments();
+  });
+  $$('[data-pf]').forEach(function (b) { b.addEventListener('click', function () { S.cache.payFilter = b.dataset.pf; aPayments(); }); });
+  $$('[data-asg]').forEach(function (s) { s.addEventListener('change', async function () {
+    if (!s.value) return;
+    var r = await sb.rpc('mp_admin_assign_payment', { p_payment: s.dataset.asg, p_attribution: s.value });
+    if (r.error) { toast(errMsg(r.error), true); s.value = ''; return; }
+    toast('Payment credited'); aPayments(); }); });
+  $$('[data-ign]').forEach(function (b) { b.addEventListener('click', async function () {
+    var r = await sb.rpc('mp_admin_ignore_payment', { p_payment: b.dataset.ign, p_ignore: true }); if (r.error) { toast(errMsg(r.error), true); return; } toast('Set aside'); aPayments(); }); });
+  $$('[data-unign]').forEach(function (b) { b.addEventListener('click', async function () {
+    var r = await sb.rpc('mp_admin_ignore_payment', { p_payment: b.dataset.unign, p_ignore: false }); if (r.error) { toast(errMsg(r.error), true); return; } toast('Restored'); aPayments(); }); });
 }
 
 function revenueModal(a, pname) {

@@ -1,42 +1,36 @@
-# MacroNations Partner Portal — Phase 1 deploy
+# MacroNations Partner Portal — deploy notes
 
-Everything here is additive. Nothing in an existing course table, function, or page changes.
+Live at https://partners.macronations.com (GitHub Pages, this repo). Backend: Supabase project `rtaiivegcqqmdchpguzn`.
+Everything here is additive: no existing course table, function or page is changed by the partner program.
 
-## 1. Database (MacroNation Tournament project)
-Run in the Supabase SQL editor, in this order:
+## Database (MacroNation Tournament project) — all applied
+Run in order; each file is safe to re-run.
 
-1. `sql/mp-01-partners-phase1.sql`: tables, security rules, functions. It also makes your existing Intro Micro admin login the partner super-admin.
-2. `sql/mp-02-seed-agreement-toolkit.sql`: draft partner agreement v1 and three starter toolkit items.
+1. `sql/mp-01-partners-phase1.sql` — partners, agreements, professors (leads), credits, commission ledger, security rules.
+2. `sql/mp-02-seed-agreement-toolkit.sql` — draft partner agreement v1 and starter toolkit.
+3. `sql/mp-03-phase2-revenue.sql` — Stripe payment mirror, automatic commission matching, refunds, new-course suggestions, partner-link landing page.
+4. `sql/mp-04-schedule-sync.sql` — hourly job (minute 17) that calls the `mp-stripe-sync` function.
 
-Both are safe to re-run. `sql/mp-99-uninstall.sql` removes every `mp_` object if you ever want it gone.
+`sql/mp-99-uninstall.sql` removes every `mp_` object. To stop the hourly job only: `select cron.unschedule('mp-stripe-sync');`
 
-## 2. Site
-1. Create a GitHub repo `partners` under amarendra-sharma and add `index.html` and `CNAME`.
-2. Turn on GitHub Pages (main branch, root).
-3. In your DNS, add a CNAME record: `partners` → `amarendra-sharma.github.io`.
-4. In Supabase → Auth → URL Configuration → Redirect URLs, add `https://partners.macronations.com`. This makes confirmation and password-reset emails return to the portal.
+## Edge functions (deployed)
+- `mp-stripe-sync` (verify JWT off; does its own checks). Reads checkout sessions and refunds from Stripe — never writes to Stripe — and credits commissions.
+  It needs a Stripe key that can read payments, in the project secret **`MP_STRIPE_SECRET_KEY`**. Best: a restricted key with *Read* on Checkout Sessions, Payment Intents, Charges, Balance transactions and Refunds.
+  (The project's existing `STRIPE_SECRET_KEY` holds a key ID, `mk_…`, not a key, so it cannot be used. The course webhooks don't need it.)
+- `im-stripe-webhook` v16 — Intro Micro now ignores other products' checkouts (Strategy Arena `student__course`, any `prefix|…` reference other than `im|`, tournament fees).
+  Optional: secret `IM_PAYMENT_LINK_IDS` = Intro Micro payment-link ids (`plink_…`), to accept reference-less checkouts only from those links.
 
-## 3. Before partners can sign
-- Have counsel review the agreement under **Settings → Partner agreement**. Edit it there and publish a new version if needed.
-- Then tick **Agreement signing open** in Settings. Until you do, approved partners can read the draft but not sign.
+## How payments reach partners
+1. A partner registers a professor (or the professor leaves their details on the partner's link).
+2. The professor sets up a course. For Micro, Macro, International Trade and Econometrics the admin **Deal desk** lists it under *New courses to credit*; Game Theory, Finance and Economics & Film courses are credited by pasting the course id.
+3. Once credited, every Stripe payment for that course becomes a commission line automatically (hourly, or *Check Stripe now* under **Stripe payments**). Refunds reduce it, never below zero. Payments already received inside the earning window are picked up as soon as the course is credited.
+4. Institutional invoices: **Courses & revenue → Record revenue**.
 
-## 4. Smoke test
-1. Sign in at partners.macronations.com with your usual login. You should see the admin overview.
-2. In a private window, create a test partner account and apply. Approve it under **Partners**.
-3. Open signing, sign as the test partner, and add a professor.
-4. Credit that professor's course from the **Deal desk**, then record a $100 test revenue line. Void the line afterwards.
+Payments are matched by Stripe `client_reference_id`: `eq|student|course`, `student__course` (Strategy Arena family), a bare Intro Micro user id, or `<prefix>|student|course`. Payments that can't be matched appear under *Needs a look* and can be credited by hand. Partners never see student names or emails.
 
-## Intro Micro webhook fix (separate)
-`im-stripe-webhook/index.ts` replaces the deployed function. It makes Intro Micro ignore checkouts that belong to other products: Strategy Arena, Econometrics, other courses' prefixed checkouts, and tournament entry fees. Intro Micro's own checkouts behave exactly as before.
+## Before partners can sign
+- Have counsel review the agreement (**Settings → Partner agreement**), then tick **Agreement signing open**.
 
-Deploy:
-```
-supabase functions deploy im-stripe-webhook --no-verify-jwt --project-ref rtaiivegcqqmdchpguzn
-```
-
-Optional extra guard: set the secret `IM_PAYMENT_LINK_IDS` to your Intro Micro payment-link id(s) (`plink_...`, comma-separated). Checkouts with no reference are then accepted only from those links.
-
-## What Phase 1 does not do yet
-- **Phase 2:** read Stripe payments automatically and capture `?ref=` codes on macronations.com and the course consoles. Until then, credit courses and record revenue by hand in the admin view.
-- **Phase 3:** customer agreements (pilot, adoption, institutional license).
-- **Phase 4:** Stripe Connect payouts. Until then, mark commissions paid with a payout reference.
+## Still to come
+- Phase 3: customer agreements (pilot, adoption, institutional licence).
+- Phase 4: Stripe Connect payouts. Until then, mark commissions paid with a payout reference.
