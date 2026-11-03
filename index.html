@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MacroNations Partners</title>
+<meta name="description" content="The MacroNations partner portal: bring professors to MacroNations and share in the revenue from the courses you help launch.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#13233F; --navy-2:#1D3357; --gold:#B8892B; --gold-soft:#F3E9D2;
+  --paper:#F5F7FA; --card:#FFFFFF; --line:#D9DFE8; --line-2:#E9EDF3;
+  --ink:#16202E; --ink-2:#4A5568; --ink-3:#7A8699;
+  --money:#1E6B4F; --money-soft:#E3F1EA; --warn:#A23B32; --warn-soft:#F8E6E4; --amber:#9A6A00; --amber-soft:#FBF1D9;
+  --serif:"Newsreader",Georgia,serif; --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r-sm:6px; --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--navy-2)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.hidden{display:none !important}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- buttons & inputs ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-sm);padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink);text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:#B9C3D2}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.primary:hover{background:var(--navy-2)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.danger{color:var(--warn);border-color:#E5B9B4}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:0 0 4px}
+.in{width:100%;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:9px 11px;font-size:15px}
+.in:focus{border-color:var(--navy-2);outline:none;box-shadow:0 0 0 3px rgba(29,51,87,.12)}
+textarea.in{min-height:90px;resize:vertical}
+.field{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hint{font-size:13px;color:var(--ink-3);margin-top:4px}
+.err{color:var(--warn);font-size:14px;min-height:1px}
+
+/* ---------- auth / gate screens ---------- */
+.gate{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr}
+.gate-side{background:var(--navy);color:#E8ECF3;padding:56px 56px 40px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.01em}
+.brand-mark{width:30px;height:30px;border-radius:7px;background:var(--gold);color:var(--navy);display:grid;place-items:center;font-family:var(--serif);font-size:19px;font-weight:600}
+.gate-side h1{font-family:var(--serif);font-weight:500;font-size:44px;line-height:1.08;margin:72px 0 18px;color:#fff;max-width:17ch}
+.gate-side p.lede{font-size:17px;color:#C5CEDC;max-width:44ch;margin:0 0 40px}
+.how{list-style:none;padding:0;margin:0;counter-reset:s;max-width:46ch}
+.how li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:12px;padding:14px 0;border-top:1px solid rgba(255,255,255,.12)}
+.how li::before{content:counter(s);font-family:var(--serif);font-size:20px;color:var(--gold)}
+.how b{color:#fff;display:block;font-weight:600}
+.how span{color:#AFBACB;font-size:14px}
+.gate-side .foot{margin-top:auto;padding-top:32px;font-size:13px;color:#8D9AB0}
+.gate-main{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.gate-box{width:100%;max-width:420px}
+.gate-box h2{font-family:var(--serif);font-weight:500;font-size:30px;margin:0 0 6px}
+.gate-box .sub{color:var(--ink-2);margin:0 0 24px}
+.tabs-inline{display:flex;gap:4px;background:var(--line-2);padding:4px;border-radius:8px;margin-bottom:22px}
+.tabs-inline button{flex:1;border:0;background:transparent;padding:8px;border-radius:6px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.tabs-inline button[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(19,35,63,.12)}
+.center-card{max-width:620px;margin:56px auto;padding:0 20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.panel h2{font-family:var(--serif);font-weight:500;font-size:28px;margin:0 0 8px}
+.agreement{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:28px 32px;max-height:52vh;overflow:auto;font-family:var(--serif);font-size:16.5px;line-height:1.6}
+.agreement h3{font-family:var(--sans);font-size:15px;font-weight:700;margin:22px 0 6px;color:var(--navy)}
+.agreement p{margin:0 0 10px;max-width:72ch}
+.agreement .doc-title{font-family:var(--serif);font-size:22px;font-weight:600;margin:0 0 14px;color:var(--navy)}
+
+/* ---------- app shell ---------- */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.rail{background:var(--navy);color:#DCE3EE;padding:22px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.rail .brand{padding:0 8px 22px;color:#fff}
+.rail .who{padding:0 8px 18px;font-size:13px;color:#9DAAC0;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:12px}
+.rail .who b{display:block;color:#fff;font-size:14px;font-weight:600}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:#C3CDDC;text-align:left;padding:9px 10px;border-radius:7px;cursor:pointer;font-weight:500;font-size:14.5px}
+.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav button[aria-current="page"]{background:rgba(184,137,43,.18);color:#fff}
+.nav svg{width:18px;height:18px;flex:none;opacity:.9}
+.nav .badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:11.5px;font-weight:700;border-radius:10px;padding:1px 7px}
+.rail .bottom{margin-top:auto;display:flex;flex-direction:column;gap:2px}
+main.content{padding:32px 40px 80px;max-width:1180px;width:100%}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.page-head h1{font-family:var(--serif);font-weight:500;font-size:32px;margin:0;line-height:1.1}
+.page-head p{margin:4px 0 0;color:var(--ink-2)}
+.section-title{font-family:var(--serif);font-weight:500;font-size:21px;margin:32px 0 12px}
+
+/* ---------- home ---------- */
+.hero-line{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px 30px;display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:center}
+.hero-line .big{font-family:var(--serif);font-size:30px;line-height:1.25;margin:0;max-width:24ch}
+.hero-line .big .amt{color:var(--money);font-weight:600;font-variant-numeric:tabular-nums}
+.hero-line .small{color:var(--ink-2);margin:10px 0 0}
+.ladder{border-left:1px solid var(--line);padding-left:28px}
+.ladder .lab{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
+.ladder .lab b{color:var(--ink)}
+.steps{display:flex;gap:5px}
+.steps i{flex:1;height:10px;border-radius:3px;background:var(--line-2)}
+.steps i.on{background:var(--gold)}
+.ladder .note{font-size:13.5px;color:var(--ink-2);margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:16px}
+.stat{padding:16px 20px;border-left:1px solid var(--line-2)}
+.stat:first-child{border-left:0}
+.stat .v{font-family:var(--serif);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .k{font-size:13px;color:var(--ink-2);margin-top:2px}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;align-items:start}
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list .item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line-2);cursor:pointer;background:transparent;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+.list .item:first-child{border-top:0}
+.list .item:hover{background:#FAFBFD}
+.list .item .main{flex:1;min-width:0}
+.list .item .t{font-weight:600}
+.list .item .s{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .empty{padding:22px 18px;color:var(--ink-2);font-size:14px}
+.linkcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.linkrow{display:flex;gap:8px;align-items:center}
+.linkrow code{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;font-family:var(--sans);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.codechip{display:inline-block;font-weight:700;letter-spacing:.04em;background:var(--gold-soft);color:#6B4E12;border-radius:5px;padding:1px 8px}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--line-2);color:var(--ink-2);white-space:nowrap}
+.tag.money{background:var(--money-soft);color:var(--money)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.amber{background:var(--amber-soft);color:var(--amber)}
+.tag.navy{background:#E3E8F1;color:var(--navy)}
+.due{font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.due.late{color:var(--warn)}
+
+/* ---------- pipeline board ---------- */
+.board{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:14px;align-items:start}
+.col{background:#EDF0F5;border-radius:var(--r);padding:10px;min-height:180px}
+.col.drop{outline:2px dashed var(--gold);outline-offset:-2px}
+.col h3{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;margin:4px 6px 10px}
+.col h3 span{font-weight:600;color:var(--ink-3)}
+.col .help{font-size:12.5px;color:var(--ink-3);margin:-6px 6px 10px}
+.lead{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:8px;cursor:pointer;display:block;width:100%;text-align:left}
+.lead:hover{border-color:#B9C3D2}
+.lead[draggable="true"]{cursor:grab}
+.lead .n{font-weight:600}
+.lead .i{font-size:13px;color:var(--ink-2)}
+.lead .m{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.lost-toggle{margin-top:14px}
+
+/* ---------- tables ---------- */
+.table-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:auto}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{text-align:left;font-size:12.5px;font-weight:600;color:var(--ink-2);padding:10px 14px;border-bottom:1px solid var(--line);background:#FAFBFD;white-space:nowrap}
+table.t td.acts{white-space:nowrap;text-align:right}
+table.t td{padding:11px 14px;border-top:1px solid var(--line-2);vertical-align:top}
+table.t tr:first-child td{border-top:0}
+table.t td.r,table.t th.r{text-align:right}
+table.t tr.click{cursor:pointer}
+table.t tr.click:hover td{background:#FAFBFD}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filters button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.filters button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+
+/* ---------- admin tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.tile .v{font-family:var(--serif);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;color:var(--ink-2)}
+.funnel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.fbar{display:grid;grid-template-columns:110px 1fr 48px;gap:12px;align-items:center;margin:8px 0;font-size:14px}
+.fbar .bar{height:12px;background:var(--line-2);border-radius:3px;overflow:hidden}
+.fbar .bar i{display:block;height:100%;background:var(--navy-2)}
+.fbar .bar i.g{background:var(--gold)}
+
+/* ---------- toolkit ---------- */
+.res{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:10px}
+.res h3{font-size:15.5px;margin:0 0 3px}
+.res p{margin:0;color:var(--ink-2);font-size:14px}
+.res .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tmpl{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;font-size:14px;margin-top:12px;max-height:280px;overflow:auto}
+#qr{background:#fff;padding:8px;border:1px solid var(--line);border-radius:8px;width:max-content}
+#qr img,#qr canvas{display:block}
+
+/* ---------- drawer & modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(19,35,63,.38);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:#fff;z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(19,35,63,.18);animation:slidein .18s ease-out}
+@keyframes slidein{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+.drawer header{padding:20px 22px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.drawer header h2{font-family:var(--serif);font-weight:500;font-size:24px;margin:0;line-height:1.15}
+.drawer header .s{color:var(--ink-2);font-size:14px}
+.drawer .body{padding:18px 22px;overflow:auto;flex:1}
+.drawer footer{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.xbtn{margin-left:auto;border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;color:var(--ink-3);padding:2px 6px}
+.modal{position:fixed;z-index:41;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100% - 24px));max-height:calc(100vh - 40px);background:#fff;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(19,35,63,.25)}
+.modal header{padding:18px 22px 6px;display:flex}
+.modal header h2{font-family:var(--serif);font-weight:500;font-size:23px;margin:0}
+.modal .body{padding:8px 22px 4px;overflow:auto}
+.modal footer{padding:14px 22px 18px;display:flex;gap:8px;justify-content:flex-end}
+.stagebar{display:flex;gap:6px;flex-wrap:wrap}
+.stagebar button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer}
+.stagebar button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.timeline{list-style:none;padding:0;margin:0}
+.timeline li{padding:9px 0 9px 18px;border-left:2px solid var(--line-2);position:relative;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:-5px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.timeline .when{color:var(--ink-3);font-size:12.5px}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:14px;margin:0 0 16px}
+.kv dt{color:var(--ink-2)}
+.kv dd{margin:0}
+.callout{border-radius:var(--r-sm);padding:11px 14px;font-size:14px;margin:0 0 14px}
+.callout.warn{background:var(--warn-soft);color:#7C2B24}
+.callout.info{background:#E8EEF7;color:var(--navy)}
+.callout.amber{background:var(--amber-soft);color:#6A4A00}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:60;box-shadow:0 8px 24px rgba(19,35,63,.25);max-width:calc(100% - 32px)}
+#toast.bad{background:var(--warn)}
+
+/* ---------- print (agreement) ---------- */
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{position:absolute;left:0;top:0;width:100%;max-height:none;overflow:visible;border:0}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .two,.hero-line{grid-template-columns:minmax(0,1fr) !important}
+  .ladder{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:18px}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:820px){
+  .gate{grid-template-columns:1fr}
+  .gate-side{padding:32px 24px}
+  .gate-side h1{margin-top:28px;font-size:34px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  main.content{min-width:0}
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:30}
+  .rail .brand,.rail .who,.rail .bottom{display:none}
+  .nav{flex-direction:row;width:100%;justify-content:space-around}
+  .nav button{flex-direction:column;gap:2px;font-size:10.5px;padding:6px 2px;flex:1 1 0;min-width:0;position:relative}
+  .nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rail{width:100%}
+  .nav .badge{position:absolute;margin:0 0 0 18px;font-size:10px}
+  main.content{padding:20px 16px 96px}
+  .page-head h1{font-size:27px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(3){border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line-2)}
+  .board{grid-template-columns:repeat(4,minmax(250px,82%));overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}
+  .col{scroll-snap-align:start}
+  .row2{grid-template-columns:1fr}
+  .hero-line{padding:22px}
+  .hero-line .big{font-size:25px}
+  .kv{grid-template-columns:110px 1fr}
+  .agreement{padding:20px}
+  .mobile-top{display:flex !important}
+}
+.mobile-top{display:none;align-items:center;justify-content:space-between;margin-bottom:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+<div id="toast" class="hidden" role="status" aria-live="polite"></div>
+
+<script>
+/* =========================================================================
+   MacroNations Partner Portal — Phase 1
+   Backend: Supabase project rtaiivegcqqmdchpguzn (mp_* tables / RPCs)
+   Note: no optional chaining or nullish coalescing (house rule).
+   ========================================================================= */
+var SUPABASE_URL = 'https://rtaiivegcqqmdchpguzn.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_KCPCMiKYQoEUgG45DVF5uA_ke-UxQKm';
+var SITE_URL = 'https://macronations.com';
+var PORTAL_URL = window.location.origin + window.location.pathname;
+
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var S = { user: null, me: null, isAdmin: false, settings: null, view: 'home', leads: [], card: null, cache: {} };
+
+/* ---------------- utilities ---------------- */
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function money(c) { var n = (Number(c) || 0) / 100; return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+function pct(r) { var n = Math.round((Number(r) || 0) * 10000) / 100; return n + '%'; }
+function dParse(d) { if (!d) return null; if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); } return new Date(d); }
+function dfmt(d) { var x = dParse(d); return x ? x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''; }
+function dshort(d) { var x = dParse(d); return x ? x.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; }
+function ago(d) { var x = dParse(d); if (!x) return ''; var s = (Date.now() - x.getTime()) / 1000; if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago'; if (s < 86400 * 7) return Math.floor(s / 86400) + ' d ago'; return dfmt(d); }
+function today() { var t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+function isoDay(t) { var m = t.getMonth() + 1, d = t.getDate(); return t.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d; }
+function errMsg(e) { if (!e) return 'Something went wrong.'; var m = e.message || String(e); return m.replace(/^.*?ERROR:\s*/, ''); }
+var toastT = null;
+function toast(msg, bad) { var t = $('#toast'); t.textContent = msg; t.className = bad ? 'bad' : ''; clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'hidden'; }, bad ? 6000 : 3200); }
+function myLink() { return S.me && S.me.code ? PORTAL_URL + '?r=' + S.me.code : ''; }
+function firstName(n) { return String(n || '').split(' ')[0]; }
+function lastName(n) { var p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p[p.length - 1] : p[0]; }
+function copyText(txt, label) {
+  function done() { toast((label || 'Text') + ' copied'); }
+  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(txt).then(done, function () { fallback(); }); } else { fallback(); }
+  function fallback() { var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed — select and copy manually', true); } document.body.removeChild(ta); }
+}
+function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function busy(btn, on, txt) { if (!btn) return; if (on) { btn.dataset.t = btn.textContent; btn.disabled = true; btn.textContent = txt || 'Working…'; } else { btn.disabled = false; if (btn.dataset.t) btn.textContent = btn.dataset.t; } }
+
+var ICON = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  pipe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>',
+  kit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
+  money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M16.5 7.5c-.6-1.5-2.3-2.5-4.5-2.5-2.6 0-4.5 1.4-4.5 3.3S9 11 12 11.7s4.5 1.6 4.5 3.6S14.6 19 12 19c-2.3 0-4-1-4.6-2.6"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5 6-5s5.4 1.6 6 5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 15c1.6.5 2.7 2 3 5"/></svg>',
+  desk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H4"/></svg>'
+};
+var STAGES = [
+  { k: 'contacted', label: 'Contacted', help: 'You have reached out.' },
+  { k: 'demo', label: 'Demo', help: 'Walkthrough booked or done.' },
+  { k: 'pilot', label: 'Pilot', help: 'Trying it in a section.' },
+  { k: 'adopted', label: 'Adopted', help: 'Confirmed by MacroNations.' }
+];
+var PRODUCTS = { im: 'Intro Microeconomics', ma: 'Macroeconomics', sa: 'Game Theory', eq: 'Econometrics', it: 'International Trade', fin: 'Finance', ef: 'Economics & Film', institutional: 'Institutional license' };
+var KIND_LABEL = { created: 'Added to pipeline', stage: 'Stage changed', note: 'Note', email: 'Email sent', call: 'Call', meeting: 'Meeting', demo: 'Demo held' };
+
+/* ---------------- layers: modal & drawer ---------------- */
+var lastFocus = null;
+function closeLayer() { $('#layer').innerHTML = ''; document.removeEventListener('keydown', escClose); if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} } }
+function escClose(e) { if (e.key === 'Escape') closeLayer(); }
+function openLayer(kind, title, sub, bodyHtml, footHtml) {
+  lastFocus = document.activeElement;
+  var cls = kind === 'drawer' ? 'drawer' : 'modal';
+  $('#layer').innerHTML = '<div class="scrim" data-close></div><section class="' + cls + '" role="dialog" aria-modal="true" aria-labelledby="dlgT">' +
+    '<header><div><h2 id="dlgT">' + esc(title) + '</h2>' + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div><button class="xbtn" data-close aria-label="Close">×</button></header>' +
+    '<div class="body">' + bodyHtml + '</div>' + (footHtml ? '<footer>' + footHtml + '</footer>' : '') + '</section>';
+  $$('[data-close]', $('#layer')).forEach(function (b) { b.addEventListener('click', closeLayer); });
+  document.addEventListener('keydown', escClose);
+  var f = $('#layer input, #layer select, #layer textarea, #layer .body button'); if (f) f.focus(); else $('#layer .xbtn').focus();
+  return $('#layer section');
+}
+
+/* ---------------- referral redirect ---------------- */
+(function referral() {
+  var m = /[?&]r=([A-Za-z0-9]+)/.exec(window.location.search);
+  if (!m) return;
+  var code = m[1].toUpperCase();
+  document.getElementById('app').innerHTML = '<div class="center-card"><p>Opening MacroNations…</p></div>';
+  var go = function () { window.location.replace(SITE_URL + '/?ref=' + encodeURIComponent(code)); };
+  var t = setTimeout(go, 1500);
+  sb.rpc('mp_log_click', { p_code: code, p_path: window.location.pathname, p_referrer: document.referrer || '' })
+    .then(function () { clearTimeout(t); go(); }, function () { clearTimeout(t); go(); });
+  window.__referral = true;
+})();
+
+/* ---------------- boot & auth ---------------- */
+async function boot() {
+  if (window.__referral) return;
+  var r = await sb.auth.getSession();
+  S.user = r.data && r.data.session ? r.data.session.user : null;
+  if (!S.user) return renderAuth();
+  await loadContext();
+  route();
+}
+sb.auth.onAuthStateChange(function (evt, session) {
+  if (window.__referral) return;
+  if (evt === 'PASSWORD_RECOVERY') { S.user = session ? session.user : null; return renderNewPassword(); }
+  if (evt === 'SIGNED_OUT') { S.user = null; S.me = null; S.isAdmin = false; renderAuth(); }
+});
+
+async function loadContext() {
+  var a = await sb.rpc('mp_is_admin');
+  S.isAdmin = !!(a && a.data);
+  var st = await sb.from('mp_settings').select('*').eq('id', 'default').maybeSingle();
+  S.settings = st.data || null;
+  var me = await sb.from('mp_partners').select('*').eq('user_id', S.user.id).maybeSingle();
+  S.me = me.data || null;
+}
+
+function route() {
+  if (S.isAdmin) { if (['overview', 'partners', 'desk', 'revenue', 'atoolkit', 'settings'].indexOf(S.view) < 0) S.view = 'overview'; return renderShell(); }
+  var st = S.me ? S.me.status : 'none';
+  if (st === 'none' || st === 'rejected') return renderApply();
+  if (st === 'applied') return renderPending();
+  if (st === 'approved') return renderSign();
+  if (st === 'suspended') return renderSuspended();
+  if (['home', 'pipeline', 'toolkit', 'earnings', 'agreement'].indexOf(S.view) < 0) S.view = 'home';
+  renderShell();
+}
+
+function gateSide() {
+  return '<aside class="gate-side"><div class="brand"><span class="brand-mark" aria-hidden="true">M</span> MacroNations Partners</div>' +
+    '<h1>Bring economics instructors to MacroNations.</h1>' +
+    '<p class="lede">Introduce professors to our courses and platform, and earn a share of the revenue from every course you help launch.</p>' +
+    '<ol class="how">' +
+    '<li><div><b>Apply and sign</b><span>Tell us how you reach instructors. Once approved, you sign the partner agreement online.</span></div></li>' +
+    '<li><div><b>Introduce professors</b><span>Add the professors you are talking to. Each one is reserved for you while you work with them.</span></div></li>' +
+    '<li><div><b>Earn on adoptions</b><span>When a professor adopts a course, you earn a share of its net revenue for two years.</span></div></li>' +
+    '</ol><div class="foot">MacroNations LLC · New York</div></aside>';
+}
+
+function renderAuth(mode) {
+  mode = mode || 'in';
+  var app = document.getElementById('app');
+  app.innerHTML = '<div class="gate">' + gateSide() + '<main class="gate-main"><div class="gate-box">' +
+    '<h2>' + (mode === 'up' ? 'Create your account' : mode === 'reset' ? 'Reset your password' : 'Sign in') + '</h2>' +
+    '<p class="sub">' + (mode === 'up' ? 'Start your partner application. It takes about five minutes.' : mode === 'reset' ? 'We will email you a link to choose a new password.' : 'Welcome back.') + '</p>' +
+    (mode !== 'reset' ? '<div class="tabs-inline" role="tablist"><button role="tab" aria-selected="' + (mode === 'in') + '" data-m="in">Sign in</button><button role="tab" aria-selected="' + (mode === 'up') + '" data-m="up">New partner</button></div>' : '') +
+    '<form id="authF" novalidate>' +
+    '<div class="field"><label class="f" for="aEmail">Email</label><input class="in" id="aEmail" type="email" autocomplete="email" required></div>' +
+    (mode !== 'reset' ? '<div class="field"><label class="f" for="aPass">Password</label><input class="in" id="aPass" type="password" autocomplete="' + (mode === 'up' ? 'new-password' : 'current-password') + '" minlength="8" required>' + (mode === 'up' ? '<div class="hint">At least 8 characters.</div>' : '') + '</div>' : '') +
+    '<p class="err" id="aErr" role="alert"></p>' +
+    '<button class="btn primary" style="width:100%;padding:11px" id="aBtn">' + (mode === 'up' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in') + '</button>' +
+    '</form>' +
+    '<p style="margin-top:16px;font-size:14px;text-align:center">' + (mode === 'reset' ? '<a href="#" data-m="in">Back to sign in</a>' : '<a href="#" data-m="reset">Forgot your password?</a>') + '</p>' +
+    '</div></main></div>';
+  $$('[data-m]', app).forEach(function (b) { b.addEventListener('click', function (e) { e.preventDefault(); renderAuth(b.dataset.m); }); });
+  $('#authF').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var email = val('aEmail'), pass = mode === 'reset' ? '' : $('#aPass').value, btn = $('#aBtn'), out = $('#aErr');
+    out.textContent = '';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { out.textContent = 'Enter a valid email address.'; return; }
+    if (mode !== 'reset' && pass.length < 8) { out.textContent = 'Passwords are at least 8 characters.'; return; }
+    busy(btn, true);
+    var r;
+    if (mode === 'up') r = await sb.auth.signUp({ email: email, password: pass, options: { emailRedirectTo: PORTAL_URL } });
+    else if (mode === 'reset') r = await sb.auth.resetPasswordForEmail(email, { redirectTo: PORTAL_URL });
+    else r = await sb.auth.signInWithPassword({ email: email, password: pass });
+    busy(btn, false);
+    if (r.error) { out.textContent = errMsg(r.error); return; }
+    if (mode === 'reset') { out.style.color = 'var(--money)'; out.textContent = 'Check your inbox for the reset link.'; return; }
+    if (mode === 'up' && !(r.data && r.data.session)) { out.style.color = 'var(--money)'; out.textContent = 'Check your inbox to confirm your email, then sign in here.'; return; }
+    S.user = r.data.user || (r.data.session && r.data.session.user);
+    await loadContext(); route();
+  });
+}
+
+function renderNewPassword() {
+  document.getElementById('app').innerHTML = '<div class="center-card"><div class="panel"><h2>Choose a new password</h2>' +
+    '<div class="field"><label class="f" for="np">New password</label><input class="in" id="np" type="password" minlength="8" autocomplete="new-password"></div>' +
+    '<p class="err" id="npErr" role="alert"></p><button class="btn primary" id="npBtn">Save password</button></div></div>';
+  $('#npBtn').addEventListener('click', async function () {
+    var p = $('#np').value; if (p.length < 8) { $('#npErr').textContent = 'At least 8 characters.'; return; }
+    var r = await sb.auth.updateUser({ password: p });
+    if (r.error) { $('#npErr').textContent = errMsg(r.error); return; }
+    toast('Password saved'); await loadContext(); route();
+  });
+}
+
+async function signOut() { await sb.auth.signOut(); }
+
+/* ---------------- partner gate screens ---------------- */
+function renderApply() {
+  var m = S.me || {};
+  var rejected = m.status === 'rejected';
+  document.getElementById('app').innerHTML = '<div class="gate">' + gateSide() + '<main class="gate-main" style="align-items:flex-start"><div class="gate-box" style="max-width:520px;padding-top:24px">' +
+    '<h2>Partner application</h2><p class="sub">Signed in as ' + esc(S.user.email) + '. <a href="#" id="so">Sign out</a></p>' +
+    (rejected ? '<div class="callout warn">Your previous application was not approved' + (m.decision_note ? ': ' + esc(m.decision_note) : '.') + ' You are welcome to update it and apply again.</div>' : '') +
+    '<form id="apF" novalidate>' +
+    '<div class="field"><label class="f" for="apName">Full name</label><input class="in" id="apName" autocomplete="name" value="' + esc(m.full_name) + '" required><div class="hint">As it should appear on your agreement.</div></div>' +
+    '<div class="field"><label class="f">Which describes you best?</label><div class="stagebar" id="apType">' +
+    [['faculty', 'Faculty member'], ['sales', 'Education sales'], ['other', 'Something else']].map(function (o) { return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + ((m.partner_type || 'faculty') === o[0]) + '">' + o[1] + '</button>'; }).join('') +
+    '</div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="apInst">Institution or company</label><input class="in" id="apInst" value="' + esc(m.institution) + '"></div>' +
+    '<div class="field"><label class="f" for="apTitle">Your title</label><input class="in" id="apTitle" value="' + esc(m.title) + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="apRegion">Region you cover</label><input class="in" id="apRegion" placeholder="e.g. New York state, SUNY system" value="' + esc(m.region) + '"></div>' +
+    '<div class="field"><label class="f" for="apPhone">Phone (optional)</label><input class="in" id="apPhone" type="tel" autocomplete="tel" value="' + esc(m.phone) + '"></div></div>' +
+    '<div class="field"><label class="f" for="apLi">LinkedIn or web page (optional)</label><input class="in" id="apLi" type="url" value="' + esc(m.linkedin) + '"></div>' +
+    '<div class="field"><label class="f" for="apPitch">How would you introduce MacroNations to instructors?</label><textarea class="in" id="apPitch" placeholder="Who you know, which schools or departments, conferences you attend…">' + esc(m.pitch) + '</textarea></div>' +
+    '<p class="err" id="apErr" role="alert"></p><button class="btn primary" id="apBtn" style="padding:11px 18px">Submit application</button></form></div></main></div>';
+  $('#so').addEventListener('click', function (e) { e.preventDefault(); signOut(); });
+  var type = m.partner_type || 'faculty';
+  $$('#apType button').forEach(function (b) { b.addEventListener('click', function () { type = b.dataset.v; $$('#apType button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }); });
+  $('#apF').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!val('apName')) { $('#apErr').textContent = 'Please enter your full name.'; return; }
+    if (!val('apPitch')) { $('#apErr').textContent = 'Please tell us briefly how you would reach instructors.'; return; }
+    var btn = $('#apBtn'); busy(btn, true, 'Submitting…');
+    var r = await sb.rpc('mp_apply', { p_full_name: val('apName'), p_phone: val('apPhone'), p_partner_type: type, p_institution: val('apInst'), p_title: val('apTitle'), p_region: val('apRegion'), p_linkedin: val('apLi'), p_pitch: val('apPitch') });
+    busy(btn, false);
+    if (r.error) { $('#apErr').textContent = errMsg(r.error); return; }
+    S.me = r.data; route();
+  });
+}
+
+function simpleGate(title, body, extra) {
+  document.getElementById('app').innerHTML = '<div class="center-card"><div class="brand" style="margin-bottom:28px;color:var(--navy)"><span class="brand-mark" aria-hidden="true">M</span> MacroNations Partners</div>' +
+    '<div class="panel"><h2>' + esc(title) + '</h2>' + body + '</div>' + (extra || '') +
+    '<p style="margin-top:18px;font-size:14px;color:var(--ink-2)">Signed in as ' + esc(S.user.email) + ' · <a href="#" id="so">Sign out</a></p></div>';
+  $('#so').addEventListener('click', function (e) { e.preventDefault(); signOut(); });
+}
+function renderPending() {
+  simpleGate('Thanks, ' + firstName(S.me.full_name) + '. Your application is in.',
+    '<p>We review applications within a few business days and will email you at <b>' + esc(S.me.email) + '</b>. Once approved, you will sign the partner agreement here and get your personal link.</p>' +
+    '<p style="margin-bottom:0"><button class="btn" id="edApp">Edit my application</button></p>');
+  $('#edApp').addEventListener('click', renderApply);
+}
+function renderSuspended() {
+  simpleGate('Your partner account is paused', '<p>' + (S.me.decision_note ? esc(S.me.decision_note) : 'Please contact us to discuss your account.') + '</p><p style="margin-bottom:0">Questions: <a href="mailto:' + esc(S.settings ? S.settings.support_email : '') + '">' + esc(S.settings ? S.settings.support_email : '') + '</a></p>');
+}
+
+function agreementHtml(body) {
+  var lines = String(body || '').trim().split(/\n/), out = '', first = true;
+  lines.forEach(function (ln) {
+    var t = ln.trim(); if (!t) return;
+    if (first) { out += '<div class="doc-title">' + esc(t) + '</div>'; first = false; return; }
+    if (/^##\s+/.test(t)) out += '<h3>' + esc(t.replace(/^##\s+/, '')) + '</h3>';
+    else out += '<p>' + esc(t) + '</p>';
+  });
+  return out;
+}
+
+async function renderSign() {
+  var r = await sb.rpc('mp_my_agreement_preview');
+  var a = r.data && r.data[0];
+  if (r.error || !a) { simpleGate('You are approved', '<p>Your agreement is being prepared. Please check back shortly.</p>'); return; }
+  if (!a.agreements_open) {
+    simpleGate('You are approved, ' + firstName(S.me.full_name) + '.', '<p>We are finalizing the partner agreement. We will email you as soon as it is ready to sign, and your partner dashboard will open right after.</p><p style="margin-bottom:0">You can read the current draft below.</p>',
+      '<div class="agreement" style="margin-top:16px">' + agreementHtml(a.body) + '</div>');
+    return;
+  }
+  simpleGate('Sign your partner agreement',
+    '<p>You are approved. Read the agreement below, then type your name to sign. Your dashboard and personal link open as soon as you sign.</p>' +
+    '<div class="agreement" id="agrBox" tabindex="0" aria-label="Partner agreement text">' + agreementHtml(a.body) + '</div>' +
+    '<div class="field" style="margin-top:18px"><label class="f" for="sgName">Type your full name to sign: <b>' + esc(S.me.full_name) + '</b></label><input class="in" id="sgName" autocomplete="off"></div>' +
+    '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-bottom:14px"><input type="checkbox" id="sgOk" style="margin-top:4px"> <span>I have read the agreement and agree to sign it electronically.</span></label>' +
+    '<p class="err" id="sgErr" role="alert"></p><button class="btn primary" id="sgBtn">Sign agreement</button>');
+  $('#sgBtn').addEventListener('click', async function () {
+    var name = val('sgName'), out = $('#sgErr');
+    if (!$('#sgOk').checked) { out.textContent = 'Please tick the box to confirm.'; return; }
+    if (!name) { out.textContent = 'Please type your full name.'; return; }
+    var btn = this; busy(btn, true, 'Signing…');
+    var s = await sb.rpc('mp_sign_partner_agreement', { p_template_id: a.template_id, p_signed_name: name, p_user_agent: navigator.userAgent });
+    busy(btn, false);
+    if (s.error) { out.textContent = errMsg(s.error); return; }
+    await loadContext(); S.view = 'home'; toast('Agreement signed. Welcome aboard.'); route();
+  });
+}
+
+/* ---------------- shell ---------------- */
+function navDef() {
+  if (S.isAdmin) return [
+    ['overview', 'Overview', ICON.home], ['partners', 'Partners', ICON.users], ['desk', 'Deal desk', ICON.desk],
+    ['revenue', 'Courses & revenue', ICON.money], ['atoolkit', 'Toolkit', ICON.kit], ['settings', 'Settings', ICON.gear]];
+  return [['home', 'Home', ICON.home], ['pipeline', 'Professors', ICON.pipe], ['toolkit', 'Toolkit', ICON.kit], ['earnings', 'Earnings', ICON.money], ['agreement', 'Agreement', ICON.doc]];
+}
+function renderShell() {
+  var who = S.isAdmin ? '<b>Super admin</b>' + esc(S.user.email) : '<b>' + esc(S.me.full_name) + '</b>Code <span class="codechip">' + esc(S.me.code) + '</span>';
+  var nav = navDef().map(function (n) { return '<button data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + n[2] + '<span>' + n[1] + '</span><span class="badge hidden" id="bdg-' + n[0] + '"></span></button>'; }).join('');
+  document.getElementById('app').innerHTML = '<div class="shell"><nav class="rail" aria-label="Main">' +
+    '<div class="brand"><span class="brand-mark" aria-hidden="true">M</span> Partners</div><div class="who">' + who + '</div>' +
+    '<div class="nav">' + nav + '</div>' +
+    '<div class="bottom nav"><button id="soBtn">' + ICON.out + '<span>Sign out</span></button></div></nav>' +
+    '<main class="content" id="main" tabindex="-1"><div class="mobile-top"><div class="brand" style="color:var(--navy)"><span class="brand-mark" aria-hidden="true">M</span> Partners</div><button class="btn sm" id="soBtn2">Sign out</button></div><div id="view"></div></main></div>';
+  $$('.rail .nav button[data-v]').forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.v); }); });
+  $('#soBtn').addEventListener('click', signOut); $('#soBtn2').addEventListener('click', signOut);
+  renderView();
+}
+function go(v) { S.view = v; $$('.rail .nav button[data-v]').forEach(function (b) { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }); renderView(); window.scrollTo(0, 0); }
+function badge(v, n) { var b = $('#bdg-' + v); if (!b) return; if (n > 0) { b.textContent = n; b.classList.remove('hidden'); } else b.classList.add('hidden'); }
+function setView(html) { $('#view').innerHTML = html; }
+function loading() { setView('<p style="color:var(--ink-2)">Loading…</p>'); }
+function renderView() {
+  var map = { home: pHome, pipeline: pPipeline, toolkit: pToolkit, earnings: pEarnings, agreement: pAgreement,
+    overview: aOverview, partners: aPartners, desk: aDesk, revenue: aRevenue, atoolkit: aToolkit, settings: aSettings };
+  (map[S.view] || pHome)();
+}
+
+/* ======================================================================
+   PARTNER VIEWS
+   ====================================================================== */
+async function loadLeads() {
+  var r = await sb.from('mp_leads').select('*').order('updated_at', { ascending: false });
+  S.leads = r.data || []; return S.leads;
+}
+
+async function pHome() {
+  loading();
+  var res = await Promise.all([sb.rpc('mp_scorecard'), loadLeads(), sb.rpc('mp_leaderboard')]);
+  var sc = res[0].data || {}, lb = res[2].data || [];
+  var month = new Date().toLocaleDateString('en-US', { month: 'long' });
+  var earned = sc.earned_month_cents || 0;
+  var headline = earned > 0
+    ? 'You have earned <span class="amt">' + money(earned) + '</span> in ' + month + '.'
+    : (sc.courses > 0 ? 'Your courses are live. Earnings appear here as students enrol.' : 'Your first adopted course is the one that starts your earnings.');
+  var thr = sc.tier_threshold || 5, done = Math.min(sc.courses || 0, thr), steps = '';
+  for (var i = 0; i < thr; i++) steps += '<i class="' + (i < done ? 'on' : '') + '"></i>';
+  var custom = sc.rate_override != null;
+  var ladder = custom
+    ? '<div class="lab"><span>Your commission rate</span><b>' + pct(sc.rate) + '</b></div><div class="note">You have a custom rate agreed with MacroNations, applied to each course you bring in for ' + sc.months + ' months.</div>'
+    : (sc.to_next_tier > 0
+      ? '<div class="lab"><span>' + sc.courses + ' of ' + thr + ' courses toward Senior Partner</span><b>' + pct(sc.rate) + ' now</b></div><div class="steps" aria-hidden="true">' + steps + '</div><div class="note">' + sc.to_next_tier + ' more adopted course' + (sc.to_next_tier === 1 ? '' : 's') + ' and every new course after that earns ' + pct(sc.tier_rate) + '.</div>'
+      : '<div class="lab"><span>Senior Partner</span><b>' + pct(sc.rate) + '</b></div><div class="steps" aria-hidden="true">' + steps + '</div><div class="note">Every new course you bring in earns ' + pct(sc.tier_rate) + ' for ' + sc.months + ' months.</div>');
+  var lifetime = sc.earned_total_cents > 0 ? 'Lifetime: ' + money(sc.earned_total_cents) + ' · Paid out: ' + money(sc.paid_cents) : 'You earn ' + pct(sc.rate) + ' of net revenue from each course you help launch, for ' + sc.months + ' months.';
+
+  var t0 = today();
+  var next = S.leads.filter(function (l) { return l.stage !== 'adopted' && l.stage !== 'lost' && l.review_status !== 'rejected'; })
+    .sort(function (a, b) { var x = a.next_step_date || '9999', y = b.next_step_date || '9999'; return x < y ? -1 : x > y ? 1 : 0; }).slice(0, 6);
+  var nextHtml = next.length ? next.map(function (l) {
+    var due = l.next_step_date ? dParse(l.next_step_date) : null, late = due && due < t0;
+    return '<button class="item" data-lead="' + l.id + '"><div class="main"><div class="t">' + esc(l.prof_name) + ' <span style="font-weight:400;color:var(--ink-2)">· ' + esc(l.institution) + '</span></div><div class="s">' + (l.next_step ? esc(l.next_step) : 'No next step yet — add one') + '</div></div>' +
+      (due ? '<span class="due' + (late ? ' late' : '') + '">' + (late ? 'Overdue · ' : '') + dshort(l.next_step_date) + '</span>' : '<span class="tag">' + stageLabel(l.stage) + '</span>') + '</button>';
+  }).join('') : '<div class="empty">No professors yet. <a href="#" id="goPipe">Add the first professor you are talking to</a> — it reserves them for you for ' + sc.protection_days + ' days.</div>';
+
+  var lbHtml = lb.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Partner leaderboard</caption><thead><tr><th scope="col">#</th><th scope="col">Partner</th><th scope="col" class="r">Courses</th><th scope="col" class="r">Demos</th></tr></thead><tbody>' +
+    lb.slice(0, 8).map(function (x) { return '<tr' + (x.is_me ? ' style="background:var(--gold-soft)"' : '') + '><td class="num">' + x.rank + '</td><td>' + esc(x.display_name) + (x.is_me ? ' (you)' : '') + '</td><td class="r num">' + x.courses + '</td><td class="r num">' + x.demos + '</td></tr>'; }).join('') + '</tbody></table></div>' : '';
+
+  setView('<div class="page-head"><div><h1>Hello, ' + esc(firstName(S.me.full_name)) + '</h1></div><button class="btn primary" id="addLeadTop">Add a professor</button></div>' +
+    '<section class="hero-line"><div><p class="big">' + headline + '</p><p class="small">' + lifetime + '</p></div><div class="ladder">' + ladder + '</div></section>' +
+    '<div class="stats"><div class="stat"><div class="v">' + (sc.courses || 0) + '</div><div class="k">Courses adopted</div></div><div class="stat"><div class="v">' + (sc.leads_open || 0) + '</div><div class="k">Professors in progress</div></div><div class="stat"><div class="v">' + (sc.demos || 0) + '</div><div class="k">Demos held</div></div><div class="stat"><div class="v">' + (sc.clicks_30d || 0) + '</div><div class="k">Link visits, 30 days</div></div></div>' +
+    '<div class="two"><div><h2 class="section-title">Coming up</h2><div class="list">' + nextHtml + '</div></div>' +
+    '<div><h2 class="section-title">Your link</h2><div class="linkcard"><div class="linkrow"><code>' + esc(myLink()) + '</code><button class="btn" id="cpLink">Copy</button></div><p class="hint" style="margin:10px 0 0">Share it in emails and slides. Visits are counted here, and professors who sign up through it are credited to you.</p></div>' +
+    (lbHtml ? '<h2 class="section-title">Leaderboard</h2>' + lbHtml : '') + '</div></div>');
+  $('#cpLink').addEventListener('click', function () { copyText(myLink(), 'Link'); });
+  $('#addLeadTop').addEventListener('click', addLeadModal);
+  var gp = $('#goPipe'); if (gp) gp.addEventListener('click', function (e) { e.preventDefault(); addLeadModal(); });
+  $$('[data-lead]').forEach(function (b) { b.addEventListener('click', function () { openLead(b.dataset.lead); }); });
+}
+function stageLabel(k) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].k === k) return STAGES[i].label; return k === 'lost' ? 'Not now' : k; }
+
+async function pPipeline() {
+  loading();
+  await loadLeads();
+  var showLost = S.cache.showLost;
+  var t0 = today();
+  function card(l) {
+    var tags = '';
+    if (l.review_status === 'conflict') tags += '<span class="tag warn">Under review</span>';
+    else if (l.review_status === 'rejected') tags += '<span class="tag warn">Credited elsewhere</span>';
+    else if (l.stage !== 'adopted' && l.stage !== 'lost') { var pu = dParse(l.protected_until); tags += '<span class="tag' + (pu < t0 ? ' amber' : '') + '">' + (pu < t0 ? 'Reservation ended' : 'Reserved to ' + dshort(l.protected_until)) + '</span>'; }
+    if (l.stage === 'adopted') tags += '<span class="tag money">Earning</span>';
+    if (l.next_step_date && l.stage !== 'adopted' && l.stage !== 'lost') { var d = dParse(l.next_step_date); tags += '<span class="due' + (d < t0 ? ' late' : '') + '">' + dshort(l.next_step_date) + '</span>'; }
+    var drag = l.stage !== 'adopted' && l.review_status !== 'rejected';
+    return '<button class="lead" data-lead="' + l.id + '"' + (drag ? ' draggable="true"' : '') + '><div class="n">' + esc(l.prof_name) + '</div><div class="i">' + esc(l.institution) + (l.course_taught ? ' · ' + esc(l.course_taught) : '') + '</div><div class="m">' + tags + '</div></button>';
+  }
+  var cols = STAGES.map(function (s) {
+    var items = S.leads.filter(function (l) { return l.stage === s.k; });
+    return '<section class="col" data-stage="' + s.k + '" aria-label="' + s.label + '"><h3>' + s.label + ' <span>' + items.length + '</span></h3><p class="help">' + s.help + '</p>' + items.map(card).join('') + '</section>';
+  }).join('');
+  var lost = S.leads.filter(function (l) { return l.stage === 'lost'; });
+  setView('<div class="page-head"><div><h1>My professors</h1><p>Open a professor to change their stage or log a call, email or demo.</p></div><button class="btn primary" id="addLead">Add a professor</button></div>' +
+    (S.leads.length ? '' : '<div class="callout info">Add each professor you are talking to. They are reserved for you for ' + (S.settings ? S.settings.lead_protection_days : 90) + ' days, so another partner cannot claim them.</div>') +
+    '<div class="board">' + cols + '</div>' +
+    (lost.length ? '<div class="lost-toggle"><button class="btn sm ghost" id="tgLost">' + (showLost ? 'Hide' : 'Show') + ' ' + lost.length + ' marked “not now”</button>' + (showLost ? '<div class="list" style="margin-top:8px">' + lost.map(function (l) { return '<button class="item" data-lead="' + l.id + '"><div class="main"><div class="t">' + esc(l.prof_name) + '</div><div class="s">' + esc(l.institution) + '</div></div></button>'; }).join('') + '</div>' : '') + '</div>' : ''));
+  $('#addLead').addEventListener('click', addLeadModal);
+  var tg = $('#tgLost'); if (tg) tg.addEventListener('click', function () { S.cache.showLost = !S.cache.showLost; pPipeline(); });
+  $$('[data-lead]').forEach(function (b) { b.addEventListener('click', function () { openLead(b.dataset.lead); }); });
+  // drag & drop
+  var dragId = null;
+  $$('.lead[draggable="true"]').forEach(function (el) {
+    el.addEventListener('dragstart', function (e) { dragId = el.dataset.lead; e.dataTransfer.setData('text/plain', dragId); e.dataTransfer.effectAllowed = 'move'; });
+  });
+  $$('.col').forEach(function (c) {
+    c.addEventListener('dragover', function (e) { if (!dragId) return; e.preventDefault(); c.classList.add('drop'); });
+    c.addEventListener('dragleave', function () { c.classList.remove('drop'); });
+    c.addEventListener('drop', async function (e) {
+      e.preventDefault(); c.classList.remove('drop');
+      var st = c.dataset.stage, id = dragId; dragId = null;
+      if (!id) return;
+      if (st === 'adopted') { toast('MacroNations marks a course Adopted once it is live. Move it to Pilot and let us know.', true); return; }
+      var l = findLead(id); if (!l || l.stage === st) return;
+      await setStage(id, st); pPipeline();
+    });
+  });
+}
+function findLead(id) { for (var i = 0; i < S.leads.length; i++) if (S.leads[i].id === id) return S.leads[i]; return null; }
+async function setStage(id, st) {
+  var r = await sb.from('mp_leads').update({ stage: st }).eq('id', id).select().maybeSingle();
+  if (r.error) { toast(errMsg(r.error), true); return false; }
+  toast('Moved to ' + stageLabel(st)); return true;
+}
+
+function addLeadModal() {
+  openLayer('modal', 'Add a professor', null,
+    '<form id="alF" novalidate><div class="row2"><div class="field"><label class="f" for="alN">Professor’s name</label><input class="in" id="alN" required></div>' +
+    '<div class="field"><label class="f" for="alE">Email</label><input class="in" id="alE" type="email" required></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="alI">College or university</label><input class="in" id="alI" required></div>' +
+    '<div class="field"><label class="f" for="alD">Department (optional)</label><input class="in" id="alD"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="alC">Course they teach</label><input class="in" id="alC" placeholder="e.g. ECON 101 Principles of Micro"></div>' +
+    '<div class="field"><label class="f" for="alS">Students per term (estimate)</label><input class="in" id="alS" type="number" min="0" inputmode="numeric"></div></div>' +
+    '<div class="field"><label class="f" for="alNo">Notes (optional)</label><textarea class="in" id="alNo" style="min-height:70px" placeholder="How you know them, what they care about"></textarea></div>' +
+    '<p class="err" id="alErr" role="alert"></p></form>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="alBtn">Add professor</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  $('#alBtn').addEventListener('click', async function () {
+    var out = $('#alErr');
+    if (!val('alN') || !val('alE') || !val('alI')) { out.textContent = 'Name, email and institution are required.'; return; }
+    var btn = this; busy(btn, true, 'Adding…');
+    var n = parseInt(val('alS'), 10);
+    var r = await sb.rpc('mp_register_lead', { p_prof_name: val('alN'), p_prof_email: val('alE'), p_institution: val('alI'), p_department: val('alD'), p_course_taught: val('alC'), p_est_students: isNaN(n) ? null : n, p_notes: val('alNo') });
+    busy(btn, false);
+    if (r.error) { out.textContent = errMsg(r.error); return; }
+    closeLayer();
+    if (r.data.review_status === 'conflict') toast('Added, and sent for review: ' + r.data.conflict_reason + ' We will confirm who is credited.', true);
+    else toast(r.data.prof_name + ' is reserved for you until ' + dfmt(r.data.protected_until));
+    if (S.view === 'pipeline') pPipeline(); else go('pipeline');
+  });
+}
+
+async function openLead(id) {
+  var l = findLead(id);
+  if (!l) { await loadLeads(); l = findLead(id); if (!l) return; }
+  var ev = await sb.from('mp_lead_events').select('*').eq('lead_id', id).order('at', { ascending: false });
+  var events = ev.data || [];
+  var locked = l.stage === 'adopted' || l.review_status === 'rejected';
+  var status = '';
+  if (l.review_status === 'conflict') status = '<div class="callout warn"><b>Under review.</b> ' + esc(l.conflict_reason || '') + ' You can keep working with this professor; we will confirm who is credited.</div>';
+  else if (l.review_status === 'rejected') status = '<div class="callout warn"><b>Credited to someone else.</b> ' + esc(l.review_note || '') + '</div>';
+  else if (l.stage === 'adopted') status = '<div class="callout info">This course is confirmed and earning. You will see it under Earnings.</div>';
+  else status = '<div class="callout amber" style="background:#F1F4F9;color:var(--ink-2)">Reserved for you until <b>' + dfmt(l.protected_until) + '</b>.</div>';
+  var stageBtns = STAGES.filter(function (s) { return s.k !== 'adopted'; }).concat([{ k: 'lost', label: 'Not now' }]).map(function (s) {
+    return '<button type="button" data-st="' + s.k + '" aria-pressed="' + (l.stage === s.k) + '"' + (locked ? ' disabled' : '') + '>' + s.label + '</button>';
+  }).join('');
+  var tl = events.length ? '<ul class="timeline">' + events.map(function (e) { return '<li><div><b>' + esc(KIND_LABEL[e.kind] || e.kind) + '</b>' + (e.detail ? ' — ' + esc(e.detail) : '') + '</div><div class="when">' + ago(e.at) + '</div></li>'; }).join('') + '</ul>' : '<p class="hint">Nothing logged yet.</p>';
+  openLayer('drawer', l.prof_name, esc(l.institution) + ' · <a href="mailto:' + esc(l.prof_email) + '">' + esc(l.prof_email) + '</a>',
+    status +
+    '<div class="field"><span class="f">Stage</span><div class="stagebar" id="ldSt">' + stageBtns + '</div></div>' +
+    '<div class="field"><span class="f">Log what you did</span><div class="row2" style="grid-template-columns:1fr auto;gap:8px"><input class="in" id="ldLog" placeholder="Optional note, e.g. “Sent syllabus mapping”"' + (locked ? ' disabled' : '') + '><select class="in" id="ldKind" style="width:auto"' + (locked ? ' disabled' : '') + '><option value="email">Email sent</option><option value="call">Call</option><option value="meeting">Meeting</option><option value="demo">Demo held</option><option value="note">Note</option></select></div><button class="btn sm" id="ldLogBtn" style="margin-top:8px"' + (locked ? ' disabled' : '') + '>Log it</button></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ldNext">Next step</label><input class="in" id="ldNext" value="' + esc(l.next_step) + '" placeholder="e.g. Book demo"></div><div class="field"><label class="f" for="ldNextD">By</label><input class="in" id="ldNextD" type="date" value="' + esc(l.next_step_date || '') + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ldCourse">Course</label><input class="in" id="ldCourse" value="' + esc(l.course_taught) + '"></div><div class="field"><label class="f" for="ldStu">Students per term</label><input class="in" id="ldStu" type="number" min="0" value="' + esc(l.est_students) + '"></div></div>' +
+    '<div class="field"><label class="f" for="ldNotes">Notes</label><textarea class="in" id="ldNotes">' + esc(l.notes) + '</textarea></div>' +
+    '<h3 style="font-size:15px;margin:18px 0 8px">History</h3>' + tl,
+    '<button class="btn" data-close>Close</button><button class="btn primary" id="ldSave">Save details</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  $$('#ldSt button').forEach(function (b) { b.addEventListener('click', async function () { if (b.getAttribute('aria-pressed') === 'true') return; if (await setStage(id, b.dataset.st)) { await loadLeads(); openLead(id); refreshUnder(); } }); });
+  $('#ldLogBtn').addEventListener('click', async function () {
+    var r = await sb.from('mp_lead_events').insert({ lead_id: id, partner_id: l.partner_id, kind: $('#ldKind').value, detail: val('ldLog') || null });
+    if (r.error) { toast(errMsg(r.error), true); return; }
+    toast('Logged'); openLead(id); refreshUnder();
+  });
+  $('#ldSave').addEventListener('click', async function () {
+    var n = parseInt(val('ldStu'), 10);
+    var r = await sb.from('mp_leads').update({ next_step: val('ldNext') || null, next_step_date: val('ldNextD') || null, course_taught: val('ldCourse') || null, est_students: isNaN(n) ? null : n, notes: val('ldNotes') || null }).eq('id', id);
+    if (r.error) { toast(errMsg(r.error), true); return; }
+    toast('Saved'); closeLayer(); refreshUnder();
+  });
+}
+function refreshUnder() { if (S.view === 'pipeline') pPipeline(); else if (S.view === 'home') pHome(); }
+
+async function pToolkit() {
+  loading();
+  var res = await Promise.all([sb.from('mp_resources').select('*').eq('is_active', true).order('sort'), loadLeads()]);
+  var items = res[0].data || [];
+  var leadOpts = '<option value="">Fill in for a professor…</option>' + S.leads.filter(function (l) { return l.stage !== 'lost'; }).map(function (l) { return '<option value="' + l.id + '">' + esc(l.prof_name) + ' — ' + esc(l.institution) + '</option>'; }).join('');
+  var kindName = { deck: 'Slides', demo: 'Live demo', email: 'Email template', video: 'Video', doc: 'Document', link: 'Link' };
+  var html = items.map(function (r) {
+    var acts = '';
+    if (r.url) acts += '<a class="btn sm" href="' + esc(r.url) + '" target="_blank" rel="noopener">Open</a><button class="btn sm" data-copy="' + esc(r.url) + '">Copy link</button>';
+    if (r.body) acts += '<select class="in" style="width:auto;padding:5px 8px;font-size:13px" data-fill="' + r.id + '">' + leadOpts + '</select><button class="btn sm" data-cp="' + r.id + '">Copy text</button><button class="btn sm" data-mail="' + r.id + '">Open in email</button>';
+    return '<article class="res"><div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><h3>' + esc(r.title) + '</h3><span class="tag navy">' + esc(kindName[r.kind] || r.kind) + '</span></div>' + (r.description ? '<p>' + esc(r.description) + '</p>' : '') +
+      (r.body ? '<div class="tmpl" id="tm-' + r.id + '"></div>' : '') + '<div class="acts">' + acts + '</div></article>';
+  }).join('');
+  setView('<div class="page-head"><div><h1>Toolkit</h1><p>Your link, a QR code for slides and handouts, and ready-to-send materials.</p></div></div>' +
+    '<div class="two" style="grid-template-columns:1fr 240px"><div class="linkcard"><span class="f" style="display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px">Your personal link</span><div class="linkrow"><code>' + esc(myLink()) + '</code><button class="btn" id="cpLink2">Copy</button></div>' +
+    '<p class="hint" style="margin:10px 0 0">Your partner code is <span class="codechip">' + esc(S.me.code) + '</span>. Professors can also enter it when they set up their course.</p></div>' +
+    '<div class="linkcard" style="text-align:center"><div id="qr" style="margin:0 auto" aria-label="QR code for your link" role="img"></div><button class="btn sm" id="dlQr" style="margin-top:10px">Download QR</button></div></div>' +
+    '<h2 class="section-title">Materials</h2>' + (html || '<p class="hint">Materials will appear here.</p>'));
+  $('#cpLink2').addEventListener('click', function () { copyText(myLink(), 'Link'); });
+  try { new QRCode(document.getElementById('qr'), { text: myLink(), width: 168, height: 168, colorDark: '#13233F', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) { $('#qr').textContent = 'QR unavailable'; }
+  $('#dlQr').addEventListener('click', function () {
+    var c = $('#qr canvas'), im = $('#qr img'); var url = c ? c.toDataURL('image/png') : (im ? im.src : '');
+    if (!url) return; var a = document.createElement('a'); a.href = url; a.download = 'macronations-' + S.me.code + '-qr.png'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  function fill(r, leadId) {
+    var l = leadId ? findLead(leadId) : null;
+    var t = r.body;
+    t = t.split('{{prof_last_name}}').join(l ? lastName(l.prof_name) : '[Last name]');
+    t = t.split('{{prof_name}}').join(l ? l.prof_name : '[Professor name]');
+    t = t.split('{{course_taught}}').join(l && l.course_taught ? l.course_taught : 'your course');
+    t = t.split('{{institution}}').join(l ? l.institution : '[Institution]');
+    t = t.split('{{my_link}}').join(myLink());
+    t = t.split('{{my_name}}').join(S.me.full_name);
+    return t;
+  }
+  items.forEach(function (r) {
+    if (!r.body) return;
+    var box = $('#tm-' + r.id), sel = $('[data-fill="' + r.id + '"]');
+    function upd() { box.textContent = fill(r, sel.value); }
+    upd(); sel.addEventListener('change', upd);
+    $('[data-cp="' + r.id + '"]').addEventListener('click', function () { copyText(box.textContent, 'Email'); });
+    $('[data-mail="' + r.id + '"]').addEventListener('click', function () {
+      var txt = box.textContent, subj = '', body = txt, m = /^Subject:\s*(.*)\n+/.exec(txt);
+      if (m) { subj = m[1]; body = txt.slice(m[0].length); }
+      var l = sel.value ? findLead(sel.value) : null;
+      if (l) sb.from('mp_lead_events').insert({ lead_id: l.id, partner_id: l.partner_id, kind: 'email', detail: r.title });
+      window.location.href = 'mailto:' + encodeURIComponent(l ? l.prof_email : '') + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body);
+    });
+  });
+  $$('[data-copy]').forEach(function (b) { b.addEventListener('click', function () { copyText(b.dataset.copy, 'Link'); }); });
+}
+
+async function pEarnings() {
+  loading();
+  var res = await Promise.all([sb.rpc('mp_scorecard'), sb.from('mp_attributions').select('*').neq('status', 'void').order('starts_at', { ascending: false }), sb.from('mp_ledger').select('*').neq('status', 'void').order('earned_on', { ascending: false })]);
+  var sc = res[0].data || {}, at = res[1].data || [], led = res[2].data || [];
+  var labels = {}; at.forEach(function (a) { labels[a.id] = a.course_label; });
+  var stTag = { pending: '<span class="tag amber">Pending</span>', approved: '<span class="tag navy">Approved</span>', paid: '<span class="tag money">Paid</span>' };
+  setView('<div class="page-head"><div><h1>Earnings</h1><p>You earn ' + pct(sc.rate) + ' of net revenue from each course you bring in, for ' + sc.months + ' months. Commissions are reviewed monthly and paid once your balance reaches ' + money(sc.min_payout_cents) + '.</p></div></div>' +
+    '<div class="stats"><div class="stat"><div class="v" style="color:var(--money)">' + money(sc.earned_total_cents) + '</div><div class="k">Earned to date</div></div><div class="stat"><div class="v">' + money(sc.pending_cents) + '</div><div class="k">Pending review</div></div><div class="stat"><div class="v">' + money(sc.approved_cents) + '</div><div class="k">Approved, to be paid</div></div><div class="stat"><div class="v">' + money(sc.paid_cents) + '</div><div class="k">Paid to you</div></div></div>' +
+    '<h2 class="section-title">Your courses</h2>' +
+    (at.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Courses credited to you</caption><thead><tr><th scope="col">Course</th><th scope="col">Institution</th><th scope="col" class="r">Your rate</th><th scope="col">Earning until</th><th scope="col">Status</th></tr></thead><tbody>' +
+      at.map(function (a) { return '<tr><td><b>' + esc(a.course_label) + '</b><div class="hint" style="margin:0">' + esc(PRODUCTS[a.product] || a.product) + '</div></td><td>' + esc(a.institution) + '</td><td class="r num">' + pct(a.rate) + '</td><td>' + dfmt(a.ends_at) + '</td><td>' + (a.status === 'active' ? '<span class="tag money">Earning</span>' : '<span class="tag">Ended</span>') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="list"><div class="empty">When a professor you introduced launches a course, MacroNations confirms it and it appears here with its earning window.</div></div>') +
+    '<h2 class="section-title">Statement</h2>' +
+    (led.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Commission statement</caption><thead><tr><th scope="col">Date</th><th scope="col">Course</th><th scope="col">Description</th><th scope="col" class="r">Net revenue</th><th scope="col" class="r">Rate</th><th scope="col" class="r">Your share</th><th scope="col">Status</th></tr></thead><tbody>' +
+      led.map(function (x) { return '<tr><td>' + dshort(x.earned_on) + '</td><td>' + esc(labels[x.attribution_id] || '') + '</td><td>' + esc(x.description || '') + '</td><td class="r num">' + money(x.net_cents) + '</td><td class="r num">' + pct(x.rate) + '</td><td class="r num"><b>' + money(x.commission_cents) + '</b></td><td>' + (stTag[x.status] || '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="list"><div class="empty">No earnings yet. Each payment from your courses will be listed here.</div></div>') +
+    '<div class="callout info" style="margin-top:18px">Payout setup is coming to this page: you will connect your bank account through Stripe once, and approved commissions are paid there automatically.</div>');
+}
+
+async function pAgreement() {
+  loading();
+  var r = await sb.from('mp_agreements').select('*').eq('kind', 'partner').neq('status', 'void').order('signed_at', { ascending: false }).limit(1);
+  var a = (r.data || [])[0];
+  var m = S.me;
+  setView('<div class="page-head"><div><h1>Agreement & profile</h1></div></div>' +
+    '<div class="two"><div>' +
+    (a ? '<p style="margin-top:0">Signed by <b>' + esc(a.signed_name) + '</b> on ' + dfmt(a.signed_at) + (a.status === 'countersigned' ? ', countersigned by MacroNations on ' + dfmt(a.countersigned_at) : '') + '.</p>' +
+      '<div class="agreement" id="printArea">' + agreementHtml(a.body_snapshot) + '<p style="margin-top:22px;font-family:var(--sans);font-size:14px;color:var(--ink-2)">Signed electronically by ' + esc(a.signed_name) + ' on ' + new Date(a.signed_at).toLocaleString() + '. Version ' + a.version + '.</p></div>' +
+      '<div class="toolbar" style="margin-top:12px"><button class="btn" id="prAgr">Print or save as PDF</button></div>' : '<p>No agreement on file.</p>') +
+    '</div><div><div class="panel"><h2 style="font-size:22px">Your details</h2>' +
+    '<div class="field"><label class="f" for="pfN">Full name</label><input class="in" id="pfN" value="' + esc(m.full_name) + '"></div>' +
+    '<div class="field"><label class="f" for="pfI">Institution or company</label><input class="in" id="pfI" value="' + esc(m.institution) + '"></div>' +
+    '<div class="field"><label class="f" for="pfT">Title</label><input class="in" id="pfT" value="' + esc(m.title) + '"></div>' +
+    '<div class="field"><label class="f" for="pfR">Region</label><input class="in" id="pfR" value="' + esc(m.region) + '"></div>' +
+    '<div class="field"><label class="f" for="pfP">Phone</label><input class="in" id="pfP" value="' + esc(m.phone) + '"></div>' +
+    '<div class="field"><label class="f" for="pfL">LinkedIn or web page</label><input class="in" id="pfL" value="' + esc(m.linkedin) + '"></div>' +
+    '<button class="btn primary" id="pfSave">Save details</button>' +
+    '<p class="hint" style="margin-top:14px">Questions about your agreement or rate: <a href="mailto:' + esc(S.settings ? S.settings.support_email : '') + '">' + esc(S.settings ? S.settings.support_email : '') + '</a></p></div></div></div>');
+  var pr = $('#prAgr'); if (pr) pr.addEventListener('click', function () { window.print(); });
+  $('#pfSave').addEventListener('click', async function () {
+    var r2 = await sb.rpc('mp_update_profile', { p_full_name: val('pfN'), p_phone: val('pfP'), p_institution: val('pfI'), p_title: val('pfT'), p_region: val('pfR'), p_linkedin: val('pfL') });
+    if (r2.error) { toast(errMsg(r2.error), true); return; }
+    S.me = r2.data; toast('Details saved');
+  });
+}
+
+/* ======================================================================
+   ADMIN VIEWS
+   ====================================================================== */
+async function adminBadges() {
+  var o = await sb.rpc('mp_admin_overview'); var d = o.data || {};
+  badge('partners', (d.applications || 0)); badge('desk', d.conflicts || 0); return d;
+}
+
+async function aOverview() {
+  loading();
+  var d = await adminBadges();
+  var f = d.funnel || {}, max = Math.max(f.contacted || 0, 1);
+  function fb(k, label, gold) { var n = f[k] || 0; return '<div class="fbar"><span>' + label + '</span><div class="bar"><i class="' + (gold ? 'g' : '') + '" style="width:' + (n / max * 100) + '%"></i></div><span class="num" style="text-align:right">' + n + '</span></div>'; }
+  var attn = [];
+  if (d.applications) attn.push(['partners', d.applications + ' application' + (d.applications > 1 ? 's' : '') + ' to review', 'Approve or decline new partners.']);
+  if (d.conflicts) attn.push(['desk', d.conflicts + ' professor' + (d.conflicts > 1 ? 's' : '') + ' claimed twice', 'Decide which partner is credited.']);
+  if (d.awaiting_sign) attn.push(['partners', d.awaiting_sign + ' approved partner' + (d.awaiting_sign > 1 ? 's' : '') + ' waiting to sign', S.settings && !S.settings.agreements_open ? 'Signing is switched off in Settings until the agreement is reviewed.' : 'They have been approved and need to sign.']);
+  if (d.owed_cents) attn.push(['revenue', money(d.owed_cents) + ' in commissions to approve or pay', 'Review the statement under Courses & revenue.']);
+  setView('<div class="page-head"><div><h1>Partner program</h1><p>Everything partners are doing, and what needs your decision.</p></div></div>' +
+    (S.settings && !S.settings.agreements_open ? '<div class="callout amber"><b>Agreement signing is off.</b> Approved partners can read the draft but cannot sign until you switch it on in Settings — do that once counsel has reviewed the agreement.</div>' : '') +
+    '<div class="tiles"><div class="tile"><div class="v">' + (d.active || 0) + '</div><div class="k">Active partners</div></div><div class="tile"><div class="v">' + (d.leads_open || 0) + '</div><div class="k">Professors in progress</div></div><div class="tile"><div class="v">' + (d.courses || 0) + '</div><div class="k">Courses credited</div></div><div class="tile"><div class="v" style="color:var(--money)">' + money(d.revenue_cents) + '</div><div class="k">Net revenue via partners</div></div></div>' +
+    '<div class="two" style="margin-top:4px"><div><h2 class="section-title">Needs your attention</h2><div class="list">' +
+    (attn.length ? attn.map(function (a) { return '<button class="item" data-go="' + a[0] + '"><div class="main"><div class="t">' + esc(a[1]) + '</div><div class="s">' + esc(a[2]) + '</div></div></button>'; }).join('') : '<div class="empty">Nothing waiting on you.</div>') +
+    '</div></div><div><h2 class="section-title">Pipeline across all partners</h2><div class="funnel">' + fb('contacted', 'Registered') + fb('demo', 'Reached demo') + fb('pilot', 'Reached pilot') + fb('adopted', 'Adopted', true) +
+    '<p class="hint" style="margin-bottom:0">Commissions owed: <b>' + money(d.owed_cents) + '</b> · Paid: <b>' + money(d.paid_cents) + '</b> · Link visits (30 days): <b>' + (d.clicks_30d || 0) + '</b></p></div></div></div>');
+  $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.go); }); });
+}
+
+async function aPartners() {
+  loading(); adminBadges();
+  var r = await sb.from('mp_partners').select('*').order('created_at', { ascending: false });
+  var ps = r.data || [];
+  var at = await sb.from('mp_attributions').select('partner_id,status');
+  var cnt = {}; (at.data || []).forEach(function (a) { if (a.status !== 'void') cnt[a.partner_id] = (cnt[a.partner_id] || 0) + 1; });
+  var flt = S.cache.pFilter || (ps.some(function (p) { return p.status === 'applied'; }) ? 'applied' : 'all');
+  var F = [['applied', 'Applications'], ['approved', 'Waiting to sign'], ['active', 'Active'], ['suspended', 'Paused'], ['rejected', 'Declined'], ['all', 'All']];
+  var list = ps.filter(function (p) { return flt === 'all' || p.status === flt; });
+  var stTag = { applied: '<span class="tag amber">Applied</span>', approved: '<span class="tag navy">Approved</span>', active: '<span class="tag money">Active</span>', suspended: '<span class="tag warn">Paused</span>', rejected: '<span class="tag">Declined</span>' };
+  var dr = S.settings ? S.settings.default_rate : 0.2;
+  setView('<div class="page-head"><div><h1>Partners</h1></div></div>' +
+    '<div class="filters" role="group" aria-label="Filter partners">' + F.map(function (x) { var n = x[0] === 'all' ? ps.length : ps.filter(function (p) { return p.status === x[0]; }).length; return '<button data-f="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + ' (' + n + ')</button>'; }).join('') + '</div>' +
+    (list.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Partners</caption><thead><tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Institution</th><th scope="col">Status</th><th scope="col">Code</th><th scope="col" class="r">Rate</th><th scope="col" class="r">Courses</th><th scope="col">Applied</th></tr></thead><tbody>' +
+      list.map(function (p) { return '<tr class="click" data-p="' + p.id + '" tabindex="0"><td><b>' + esc(p.full_name) + '</b><div class="hint" style="margin:0">' + esc(p.email) + '</div></td><td>' + ({ faculty: 'Faculty', sales: 'Sales', other: 'Other' }[p.partner_type] || '') + '</td><td>' + esc(p.institution) + '</td><td>' + (stTag[p.status] || p.status) + '</td><td>' + (p.code ? '<span class="codechip">' + esc(p.code) + '</span>' : '') + '</td><td class="r num">' + (p.rate_override != null ? '<b>' + pct(p.rate_override) + '</b>' : pct(dr)) + '</td><td class="r num">' + (cnt[p.id] || 0) + '</td><td>' + dshort(p.created_at) + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="list"><div class="empty">' + (ps.length ? 'No partners with this status.' : 'No applications yet. Share ' + esc(PORTAL_URL) + ' with people you would like as partners.') + '</div></div>'));
+  $$('[data-f]').forEach(function (b) { b.addEventListener('click', function () { S.cache.pFilter = b.dataset.f; aPartners(); }); });
+  $$('[data-p]').forEach(function (tr) { function o() { openPartner(tr.dataset.p, ps); } tr.addEventListener('click', o); tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') o(); }); });
+}
+
+async function openPartner(id, ps) {
+  var p = null; for (var i = 0; i < ps.length; i++) if (ps[i].id === id) p = ps[i];
+  if (!p) return;
+  var res = await Promise.all([sb.rpc('mp_scorecard', { p_partner: id }), sb.from('mp_agreements').select('*').eq('partner_id', id).order('signed_at', { ascending: false })]);
+  var sc = res[0].data || {}, ags = res[1].data || [];
+  var acts = '';
+  if (p.status === 'applied') acts = '<button class="btn danger" data-d="reject">Decline</button><button class="btn primary" data-d="approve">Approve</button>';
+  else if (p.status === 'approved' || p.status === 'active') acts = '<button class="btn danger" data-d="suspend">Pause partner</button>';
+  else if (p.status === 'suspended') acts = '<button class="btn primary" data-d="reinstate">Reinstate</button>';
+  else if (p.status === 'rejected') acts = '<button class="btn" data-d="approve">Approve after all</button>';
+  var agHtml = ags.length ? ags.map(function (a) { return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:14px"><span>Partner agreement v' + a.version + ', signed ' + dfmt(a.signed_at) + '</span>' + (a.status === 'countersigned' ? '<span class="tag money">Countersigned</span>' : '<button class="btn sm" data-cs="' + a.id + '">Countersign</button>') + '<button class="btn sm ghost" data-va="' + a.id + '">View</button></div>'; }).join('') : '<p class="hint">Not signed yet.</p>';
+  openLayer('drawer', p.full_name, esc(p.email) + (p.code ? ' · <span class="codechip">' + esc(p.code) + '</span>' : ''),
+    '<dl class="kv"><dt>Type</dt><dd>' + ({ faculty: 'Faculty member', sales: 'Education sales', other: 'Other' }[p.partner_type] || '') + '</dd><dt>Institution</dt><dd>' + esc(p.institution || '—') + '</dd><dt>Title</dt><dd>' + esc(p.title || '—') + '</dd><dt>Region</dt><dd>' + esc(p.region || '—') + '</dd><dt>Phone</dt><dd>' + esc(p.phone || '—') + '</dd><dt>Web</dt><dd>' + (p.linkedin ? '<a href="' + esc(p.linkedin) + '" target="_blank" rel="noopener">' + esc(p.linkedin) + '</a>' : '—') + '</dd><dt>Applied</dt><dd>' + dfmt(p.created_at) + '</dd></dl>' +
+    '<span class="f">How they will promote MacroNations</span><p style="margin:4px 0 18px;white-space:pre-wrap">' + esc(p.pitch || '—') + '</p>' +
+    (p.partner_type === 'faculty' ? '<div class="callout amber">Faculty partner: the agreement excludes commission on courses they teach or approve themselves unless you agree otherwise in writing.</div>' : '') +
+    '<h3 style="font-size:15px;margin:6px 0 8px">Commission</h3>' +
+    '<div class="row2"><div class="field"><label class="f" for="ptRate">Custom rate (%)</label><input class="in" id="ptRate" type="number" step="0.5" min="0" max="100" value="' + (p.rate_override != null ? Math.round(p.rate_override * 10000) / 100 : '') + '" placeholder="Default (' + pct(sc.default_rate) + ' → ' + pct(sc.tier_rate) + ')"><div class="hint">Leave blank to use the program rates and tier bump.</div></div>' +
+    '<div class="field"><span class="f">Right now</span><p style="margin:6px 0 0">' + pct(sc.rate) + ' · ' + (sc.courses || 0) + ' course' + (sc.courses === 1 ? '' : 's') + ' · ' + (sc.leads_total || 0) + ' professors · ' + (sc.demos || 0) + ' demos<br>Earned ' + money(sc.earned_total_cents) + ', paid ' + money(sc.paid_cents) + '</p></div></div>' +
+    '<div class="field"><label class="f" for="ptNotes">Private notes</label><textarea class="in" id="ptNotes" style="min-height:70px">' + esc(p.admin_notes) + '</textarea></div><button class="btn sm" id="ptSave">Save rate & notes</button>' +
+    '<h3 style="font-size:15px;margin:22px 0 8px">Agreement</h3>' + agHtml +
+    '<div class="field" style="margin-top:18px"><label class="f" for="ptNote">Message with your decision (optional, shown to the partner)</label><input class="in" id="ptNote" value="' + esc(p.decision_note) + '"></div>',
+    acts ? '<button class="btn" data-close>Close</button>' + acts : '<button class="btn" data-close>Close</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  $('#ptSave').addEventListener('click', async function () {
+    var v = val('ptRate'), rate = v === '' ? null : Number(v) / 100;
+    if (rate != null && (isNaN(rate) || rate < 0 || rate > 1)) { toast('Rate must be between 0 and 100.', true); return; }
+    var r = await sb.rpc('mp_admin_set_terms', { p_partner: id, p_rate_override: rate, p_admin_notes: val('ptNotes') || null });
+    if (r.error) { toast(errMsg(r.error), true); return; }
+    toast('Saved'); closeLayer(); aPartners();
+  });
+  $$('[data-d]').forEach(function (b) { b.addEventListener('click', async function () {
+    var r = await sb.rpc('mp_admin_decide', { p_partner: id, p_decision: b.dataset.d, p_note: val('ptNote') || null });
+    if (r.error) { toast(errMsg(r.error), true); return; }
+    toast({ approve: 'Approved. ' + firstName(p.full_name) + ' can now sign the agreement.', reject: 'Declined', suspend: 'Paused', reinstate: 'Reinstated' }[b.dataset.d]);
+    closeLayer(); aPartners();
+  }); });
+  $$('[data-cs]').forEach(function (b) { b.addEventListener('click', async function () { var r = await sb.rpc('mp_admin_countersign', { p_agreement: b.dataset.cs }); if (r.error) { toast(errMsg(r.error), true); return; } toast('Countersigned'); openPartner(id, ps); }); });
+  $$('[data-va]').forEach(function (b) { b.addEventListener('click', function () { var a = null; ags.forEach(function (x) { if (x.id === b.dataset.va) a = x; }); if (!a) return;
+    openLayer('modal', 'Signed agreement', esc(a.signed_name) + ' · ' + dfmt(a.signed_at), '<div class="agreement" id="printArea" style="max-height:60vh">' + agreementHtml(a.body_snapshot) + '<p style="font-family:var(--sans);font-size:13px;color:var(--ink-2)">Signed electronically by ' + esc(a.signed_name) + ' on ' + new Date(a.signed_at).toLocaleString() + '. Browser: ' + esc(a.user_agent || '') + '</p></div>', '<button class="btn" id="prA">Print or save as PDF</button><button class="btn primary" data-close>Close</button>');
+    $$('#layer [data-close]').forEach(function (x) { x.addEventListener('click', closeLayer); }); $('#prA').addEventListener('click', function () { window.print(); }); }); });
+}
+
+async function aDesk() {
+  loading(); adminBadges();
+  var r = await sb.rpc('mp_admin_leads');
+  if (r.error) { setView('<p class="err">' + esc(errMsg(r.error)) + '</p>'); return; }
+  var ls = r.data || [];
+  var flt = S.cache.dFilter || (ls.some(function (l) { return l.review_status === 'conflict'; }) ? 'conflict' : 'open');
+  var F = [['conflict', 'Claimed twice'], ['open', 'In progress'], ['pilot', 'In pilot'], ['adopted', 'Adopted'], ['all', 'All']];
+  function match(l, f) { if (f === 'all') return true; if (f === 'conflict') return l.review_status === 'conflict'; if (f === 'open') return ['contacted', 'demo', 'pilot'].indexOf(l.stage) >= 0 && l.review_status !== 'rejected'; return l.stage === f; }
+  var list = ls.filter(function (l) { return match(l, flt); });
+  var rvTag = { clear: '', conflict: '<span class="tag warn">Claimed twice</span>', approved: '<span class="tag money">Confirmed</span>', rejected: '<span class="tag">Not credited</span>' };
+  setView('<div class="page-head"><div><h1>Deal desk</h1><p>Every professor partners have registered. Settle double claims and credit adopted courses.</p></div></div>' +
+    '<div class="filters" role="group" aria-label="Filter">' + F.map(function (x) { var n = ls.filter(function (l) { return match(l, x[0]); }).length; return '<button data-f="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + ' (' + n + ')</button>'; }).join('') + '</div>' +
+    (list.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Registered professors</caption><thead><tr><th scope="col">Professor</th><th scope="col">Partner</th><th scope="col">Course</th><th scope="col">Stage</th><th scope="col">Reserved to</th><th scope="col"></th></tr></thead><tbody>' +
+      list.map(function (l) {
+        var acts = '';
+        if (l.review_status === 'conflict') acts = '<button class="btn sm danger" data-rv="reject" data-id="' + l.id + '">Not credited</button> <button class="btn sm primary" data-rv="approve" data-id="' + l.id + '">Credit ' + esc(firstName(l.partner_name)) + '</button>';
+        else if (l.stage !== 'adopted' && l.review_status !== 'rejected') acts = '<button class="btn sm" data-ext="' + l.id + '" title="Extend the reservation by 30 days">+30 days</button> <button class="btn sm primary" data-cr="' + l.id + '">Course is live</button>';
+        return '<tr><td><b>' + esc(l.prof_name) + '</b><div class="hint" style="margin:0">' + esc(l.institution) + ' · ' + esc(l.prof_email) + '</div>' + (l.review_status === 'conflict' ? '<div class="hint" style="margin:4px 0 0;color:var(--warn)">Also claimed by ' + esc(l.other_claims || 'another partner') + '</div>' : '') + '</td><td>' + esc(l.partner_name) + '</td><td>' + esc(l.course_taught || '') + (l.est_students ? '<div class="hint" style="margin:0">~' + l.est_students + ' students</div>' : '') + '</td><td>' + stageLabel(l.stage) + ' ' + (rvTag[l.review_status] || '') + '</td><td>' + dshort(l.protected_until) + '</td><td class="acts">' + acts + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<div class="list"><div class="empty">Nothing here.</div></div>'));
+  $$('[data-f]').forEach(function (b) { b.addEventListener('click', function () { S.cache.dFilter = b.dataset.f; aDesk(); }); });
+  $$('[data-rv]').forEach(function (b) { b.addEventListener('click', async function () {
+    var note = b.dataset.rv === 'reject' ? window.prompt('Short note for the partner (optional):', 'Another partner introduced this professor first.') : null;
+    if (note === null && b.dataset.rv === 'reject') return;
+    var r2 = await sb.rpc('mp_admin_review_lead', { p_lead: b.dataset.id, p_decision: b.dataset.rv, p_note: note, p_extend_days: null });
+    if (r2.error) { toast(errMsg(r2.error), true); return; } toast('Updated'); aDesk(); }); });
+  $$('[data-ext]').forEach(function (b) { b.addEventListener('click', async function () {
+    var r2 = await sb.rpc('mp_admin_review_lead', { p_lead: b.dataset.ext, p_decision: 'keep', p_note: null, p_extend_days: 30 });
+    if (r2.error) { toast(errMsg(r2.error), true); return; } toast('Reservation extended to ' + dfmt(r2.data.protected_until)); aDesk(); }); });
+  $$('[data-cr]').forEach(function (b) { b.addEventListener('click', function () { var l = null; ls.forEach(function (x) { if (x.id === b.dataset.cr) l = x; }); creditModal(l); }); });
+}
+
+async function creditModal(lead) {
+  var pr = await sb.from('mp_partners').select('id,full_name,rate_override,status').in('status', ['active', 'approved']).order('full_name');
+  var ps = pr.data || [];
+  var leads = lead ? [] : ((await sb.rpc('mp_admin_leads')).data || []).filter(function (l) { return l.stage !== 'adopted' && l.review_status !== 'rejected'; });
+  var prodOpts = Object.keys(PRODUCTS).map(function (k) { return '<option value="' + k + '">' + PRODUCTS[k] + '</option>'; }).join('');
+  openLayer('modal', 'Credit a course to a partner', lead ? esc(lead.prof_name) + ' · ' + esc(lead.institution) + ' · ' + esc(lead.partner_name) : 'Use this when a course is live.',
+    (lead ? '' : '<div class="field"><label class="f" for="crP">Partner</label><select class="in" id="crP">' + ps.map(function (p) { return '<option value="' + p.id + '">' + esc(p.full_name) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="field"><label class="f" for="crL">Professor (optional)</label><select class="in" id="crL"><option value="">— Not from a registered professor —</option></select></div>') +
+    '<div class="row2"><div class="field"><label class="f" for="crProd">Course</label><select class="in" id="crProd">' + prodOpts + '</select></div>' +
+    '<div class="field"><label class="f" for="crCid">Course ID in that console</label><input class="in" id="crCid" placeholder="Paste the course id"><div class="hint">Prevents the same section being credited twice.</div></div></div>' +
+    '<div class="field"><label class="f" for="crLab">Label partners will see</label><input class="in" id="crLab" value="' + (lead ? esc((lead.course_taught || 'Course') + ' — ' + lead.institution) : '') + '"></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="crStart">Earning starts</label><input class="in" id="crStart" type="date" value="' + isoDay(today()) + '"><div class="hint">Ends ' + (S.settings ? S.settings.attribution_months : 24) + ' months later.</div></div>' +
+    '<div class="field"><label class="f" for="crRate">Rate for this course (%)</label><input class="in" id="crRate" type="number" step="0.5" min="0" max="100" placeholder="Partner’s current rate"></div></div>' +
+    '<div class="field"><label class="f" for="crNote">Internal note (optional)</label><input class="in" id="crNote"></div><p class="err" id="crErr" role="alert"></p>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="crBtn">Credit course</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  if (!lead) {
+    var fillL = function () { var pid = $('#crP').value; $('#crL').innerHTML = '<option value="">— Not from a registered professor —</option>' + leads.filter(function (l) { return l.partner_id === pid; }).map(function (l) { return '<option value="' + l.id + '">' + esc(l.prof_name) + ' — ' + esc(l.institution) + '</option>'; }).join(''); };
+    fillL(); $('#crP').addEventListener('change', fillL);
+    $('#crL').addEventListener('change', function () { var l = null; leads.forEach(function (x) { if (x.id === $('#crL').value) l = x; }); if (l && !val('crLab')) $('#crLab').value = (l.course_taught || 'Course') + ' — ' + l.institution; });
+  }
+  $('#crBtn').addEventListener('click', async function () {
+    var out = $('#crErr'); if (!val('crLab')) { out.textContent = 'Add a label.'; return; }
+    var rv = val('crRate'), rate = rv === '' ? null : Number(rv) / 100;
+    var btn = this; busy(btn, true);
+    var r = await sb.rpc('mp_admin_attribute', { p_partner: lead ? lead.partner_id : $('#crP').value, p_lead: lead ? lead.id : (val('crL') || null), p_product: $('#crProd').value, p_course_id: val('crCid') || null, p_course_label: val('crLab'), p_professor_email: null, p_institution: null, p_starts_at: val('crStart') || null, p_rate: rate, p_note: val('crNote') || null });
+    busy(btn, false);
+    if (r.error) { out.textContent = /mp_attr_course_active/.test(r.error.message) ? 'That course is already credited to a partner.' : errMsg(r.error); return; }
+    closeLayer(); toast('Credited at ' + pct(r.data.rate) + ' until ' + dfmt(r.data.ends_at)); renderView();
+  });
+}
+
+async function aRevenue() {
+  loading(); adminBadges();
+  var res = await Promise.all([sb.from('mp_attributions').select('*').order('created_at', { ascending: false }), sb.from('mp_ledger').select('*').order('earned_on', { ascending: false }), sb.from('mp_partners').select('id,full_name')]);
+  var at = res[0].data || [], led = res[1].data || [], names = {};
+  (res[2].data || []).forEach(function (p) { names[p.id] = p.full_name; });
+  var labels = {}; at.forEach(function (a) { labels[a.id] = a.course_label; });
+  var flt = S.cache.lFilter || 'open';
+  var lf = led.filter(function (x) { return flt === 'all' ? true : flt === 'open' ? (x.status === 'pending' || x.status === 'approved') : x.status === flt; });
+  var stTag = { pending: '<span class="tag amber">Pending</span>', approved: '<span class="tag navy">Approved</span>', paid: '<span class="tag money">Paid</span>', void: '<span class="tag">Void</span>' };
+  setView('<div class="page-head"><div><h1>Courses & revenue</h1><p>Courses credited to partners, revenue recorded against them, and commissions to approve and pay.</p></div><button class="btn primary" id="crNew">Credit a course</button></div>' +
+    '<h2 class="section-title" style="margin-top:8px">Credited courses</h2>' +
+    (at.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Credited courses</caption><thead><tr><th scope="col">Course</th><th scope="col">Partner</th><th scope="col" class="r">Rate</th><th scope="col">Window</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>' +
+      at.map(function (a) { return '<tr><td><b>' + esc(a.course_label) + '</b><div class="hint" style="margin:0">' + esc(PRODUCTS[a.product] || a.product) + (a.course_id ? ' · ' + esc(a.course_id) : '') + '</div></td><td>' + esc(names[a.partner_id] || '') + '</td><td class="r num">' + pct(a.rate) + '</td><td>' + dshort(a.starts_at) + ' – ' + dfmt(a.ends_at) + '</td><td>' + ({ active: '<span class="tag money">Earning</span>', ended: '<span class="tag">Ended</span>', void: '<span class="tag warn">Void</span>' }[a.status]) + '</td><td style="text-align:right;white-space:nowrap">' + (a.status === 'active' ? '<button class="btn sm primary" data-rev="' + a.id + '">Record revenue</button> <button class="btn sm" data-as="ended" data-id="' + a.id + '">End</button> <button class="btn sm danger" data-as="void" data-id="' + a.id + '">Void</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>'
+      : '<div class="list"><div class="empty">No courses credited yet. When a professor’s course goes live, credit it from the Deal desk or with “Credit a course”.</div></div>') +
+    '<h2 class="section-title">Commission statement</h2>' +
+    '<div class="toolbar"><div class="filters" style="margin:0" role="group" aria-label="Filter statement">' + [['open', 'To approve or pay'], ['paid', 'Paid'], ['void', 'Void'], ['all', 'All']].map(function (x) { return '<button data-lf="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<span style="flex:1"></span><button class="btn sm" data-bulk="approved">Approve selected</button><button class="btn sm" data-bulk="paid">Mark selected paid</button><button class="btn sm danger" data-bulk="void">Void selected</button></div>' +
+    (lf.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Commission statement</caption><thead><tr><th scope="col"><input type="checkbox" id="selAll" aria-label="Select all"></th><th scope="col">Date</th><th scope="col">Partner</th><th scope="col">Course</th><th scope="col">Description</th><th scope="col" class="r">Net</th><th scope="col" class="r">Rate</th><th scope="col" class="r">Commission</th><th scope="col">Status</th></tr></thead><tbody>' +
+      lf.map(function (x) { return '<tr><td>' + (x.status !== 'paid' && x.status !== 'void' ? '<input type="checkbox" class="lsel" value="' + x.id + '" aria-label="Select">' : '') + '</td><td>' + dshort(x.earned_on) + '</td><td>' + esc(names[x.partner_id] || '') + '</td><td>' + esc(labels[x.attribution_id] || '') + '</td><td>' + esc(x.description || '') + (x.source_ref ? '<div class="hint" style="margin:0">' + esc(x.source) + ' ' + esc(x.source_ref) + '</div>' : '') + '</td><td class="r num">' + money(x.net_cents) + '</td><td class="r num">' + pct(x.rate) + '</td><td class="r num"><b>' + money(x.commission_cents) + '</b></td><td>' + (stTag[x.status] || '') + (x.payout_ref ? '<div class="hint" style="margin:0">' + esc(x.payout_ref) + '</div>' : '') + '</td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<div class="list"><div class="empty">Nothing in this view.</div></div>') +
+    '<p class="hint" style="margin-top:12px">Student payments through Stripe will be recorded here automatically in the next phase. For now, record institutional invoices and any Stripe payments by hand with “Record revenue”.</p>');
+  $('#crNew').addEventListener('click', function () { creditModal(null); });
+  $$('[data-lf]').forEach(function (b) { b.addEventListener('click', function () { S.cache.lFilter = b.dataset.lf; aRevenue(); }); });
+  var sa = $('#selAll'); if (sa) sa.addEventListener('change', function () { $$('.lsel').forEach(function (c) { c.checked = sa.checked; }); });
+  $$('[data-as]').forEach(function (b) { b.addEventListener('click', async function () {
+    if (!window.confirm(b.dataset.as === 'void' ? 'Void this credit? Use this only for mistakes.' : 'End this course’s earning window now?')) return;
+    var r = await sb.rpc('mp_admin_set_attribution_status', { p_id: b.dataset.id, p_status: b.dataset.as }); if (r.error) { toast(errMsg(r.error), true); return; } toast('Updated'); aRevenue(); }); });
+  $$('[data-bulk]').forEach(function (b) { b.addEventListener('click', async function () {
+    var ids = $$('.lsel').filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+    if (!ids.length) { toast('Select rows first', true); return; }
+    var ref = null;
+    if (b.dataset.bulk === 'paid') { ref = window.prompt('Payout reference (e.g. Stripe transfer id or check number):', ''); if (ref === null) return; }
+    if (b.dataset.bulk === 'void' && !window.confirm('Void ' + ids.length + ' row(s)?')) return;
+    var r = await sb.rpc('mp_admin_set_ledger_status', { p_ids: ids, p_status: b.dataset.bulk, p_payout_ref: ref || null });
+    if (r.error) { toast(errMsg(r.error), true); return; } toast(r.data + ' row(s) updated'); aRevenue(); }); });
+  $$('[data-rev]').forEach(function (b) { b.addEventListener('click', function () { var a = null; at.forEach(function (x) { if (x.id === b.dataset.rev) a = x; }); revenueModal(a, names[a.partner_id]); }); });
+}
+
+function revenueModal(a, pname) {
+  openLayer('modal', 'Record revenue', esc(a.course_label) + ' · ' + esc(pname || '') + ' · ' + pct(a.rate),
+    '<div class="row2"><div class="field"><label class="f" for="rvSrc">Source</label><select class="in" id="rvSrc"><option value="invoice">Institutional invoice</option><option value="stripe">Stripe payment</option><option value="adjustment">Adjustment</option></select></div>' +
+    '<div class="field"><label class="f" for="rvRef">Reference</label><input class="in" id="rvRef" placeholder="Invoice no. or Stripe id"><div class="hint">Each reference can only be recorded once.</div></div></div>' +
+    '<div class="field"><label class="f" for="rvDesc">Description</label><input class="in" id="rvDesc" placeholder="e.g. Spring 2027 department license"></div>' +
+    '<div class="row2" style="grid-template-columns:1fr 1fr 1fr"><div class="field"><label class="f" for="rvG">Amount received ($)</label><input class="in" id="rvG" type="number" step="0.01" min="0"></div><div class="field"><label class="f" for="rvF">Processing fees ($)</label><input class="in" id="rvF" type="number" step="0.01" min="0" value="0"></div><div class="field"><label class="f" for="rvR">Refunds ($)</label><input class="in" id="rvR" type="number" step="0.01" min="0" value="0"></div></div>' +
+    '<div class="field"><label class="f" for="rvD">Date received</label><input class="in" id="rvD" type="date" value="' + isoDay(today()) + '"></div>' +
+    '<p style="margin:4px 0 10px" id="rvCalc" class="num"></p><p class="err" id="rvErr" role="alert"></p>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="rvBtn">Record revenue</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  function c(id) { return Math.round((Number(val(id)) || 0) * 100); }
+  function calc() { var net = c('rvG') - c('rvF') - c('rvR'); $('#rvCalc').innerHTML = 'Net ' + money(net) + ' × ' + pct(a.rate) + ' = <b style="color:var(--money)">' + money(Math.round(net * a.rate)) + '</b> commission'; }
+  ['rvG', 'rvF', 'rvR'].forEach(function (id) { $('#' + id).addEventListener('input', calc); }); calc();
+  $('#rvBtn').addEventListener('click', async function () {
+    if (c('rvG') <= 0 && $('#rvSrc').value !== 'adjustment') { $('#rvErr').textContent = 'Enter the amount received.'; return; }
+    var btn = this; busy(btn, true);
+    var r = await sb.rpc('mp_admin_add_revenue', { p_attribution: a.id, p_source: $('#rvSrc').value, p_source_ref: val('rvRef') || null, p_description: val('rvDesc') || null, p_gross_cents: c('rvG'), p_fees_cents: c('rvF'), p_refund_cents: c('rvR'), p_earned_on: val('rvD') || null });
+    busy(btn, false);
+    if (r.error) { $('#rvErr').textContent = /mp_ledger_source_ref/.test(r.error.message) ? 'That reference has already been recorded.' : errMsg(r.error); return; }
+    closeLayer(); toast('Recorded: ' + money(r.data.commission_cents) + ' commission pending'); aRevenue();
+  });
+}
+
+async function aToolkit() {
+  loading(); adminBadges();
+  var r = await sb.from('mp_resources').select('*').order('sort');
+  var items = r.data || [];
+  setView('<div class="page-head"><div><h1>Toolkit</h1><p>What partners see under Toolkit. Email templates can use {{prof_name}}, {{prof_last_name}}, {{course_taught}}, {{institution}}, {{my_link}} and {{my_name}}.</p></div><button class="btn primary" id="rsNew">Add material</button></div>' +
+    (items.length ? items.map(function (x) { return '<article class="res"><div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><h3>' + esc(x.title) + '</h3><span class="tag navy">' + esc(x.kind) + '</span>' + (x.is_active ? '' : '<span class="tag">Hidden</span>') + '</div><p>' + esc(x.description || '') + '</p><div class="acts"><button class="btn sm" data-ed="' + x.id + '">Edit</button><button class="btn sm danger" data-del="' + x.id + '">Delete</button></div></article>'; }).join('') : '<div class="list"><div class="empty">No materials yet.</div></div>'));
+  $('#rsNew').addEventListener('click', function () { resModal(null); });
+  $$('[data-ed]').forEach(function (b) { b.addEventListener('click', function () { var x = null; items.forEach(function (i) { if (i.id === b.dataset.ed) x = i; }); resModal(x); }); });
+  $$('[data-del]').forEach(function (b) { b.addEventListener('click', async function () { if (!window.confirm('Delete this material?')) return; var d = await sb.from('mp_resources').delete().eq('id', b.dataset.del); if (d.error) { toast(errMsg(d.error), true); return; } toast('Deleted'); aToolkit(); }); });
+}
+function resModal(x) {
+  x = x || { kind: 'link', sort: 100, is_active: true };
+  var kinds = [['deck', 'Slides'], ['demo', 'Live demo'], ['email', 'Email template'], ['video', 'Video'], ['doc', 'Document'], ['link', 'Link']];
+  openLayer('modal', x.id ? 'Edit material' : 'Add material', null,
+    '<div class="row2"><div class="field"><label class="f" for="rsK">Type</label><select class="in" id="rsK">' + kinds.map(function (k) { return '<option value="' + k[0] + '"' + (x.kind === k[0] ? ' selected' : '') + '>' + k[1] + '</option>'; }).join('') + '</select></div><div class="field"><label class="f" for="rsS">Order</label><input class="in" id="rsS" type="number" value="' + esc(x.sort) + '"></div></div>' +
+    '<div class="field"><label class="f" for="rsT">Title</label><input class="in" id="rsT" value="' + esc(x.title) + '"></div>' +
+    '<div class="field"><label class="f" for="rsD">Short description</label><input class="in" id="rsD" value="' + esc(x.description) + '"></div>' +
+    '<div class="field"><label class="f" for="rsU">Link (optional)</label><input class="in" id="rsU" type="url" value="' + esc(x.url) + '"></div>' +
+    '<div class="field"><label class="f" for="rsB">Email text (optional — first line “Subject: …”)</label><textarea class="in" id="rsB" style="min-height:160px">' + esc(x.body) + '</textarea></div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="rsA"' + (x.is_active ? ' checked' : '') + '> Visible to partners</label><p class="err" id="rsErr"></p>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="rsSave">Save</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  $('#rsSave').addEventListener('click', async function () {
+    if (!val('rsT')) { $('#rsErr').textContent = 'Add a title.'; return; }
+    var row = { kind: $('#rsK').value, title: val('rsT'), description: val('rsD') || null, url: val('rsU') || null, body: $('#rsB').value.trim() || null, sort: parseInt(val('rsS'), 10) || 100, is_active: $('#rsA').checked };
+    var r = x.id ? await sb.from('mp_resources').update(row).eq('id', x.id) : await sb.from('mp_resources').insert(row);
+    if (r.error) { $('#rsErr').textContent = errMsg(r.error); return; }
+    closeLayer(); toast('Saved'); aToolkit();
+  });
+}
+
+async function aSettings() {
+  loading(); adminBadges();
+  var res = await Promise.all([sb.from('mp_settings').select('*').eq('id', 'default').maybeSingle(), sb.from('mp_agreement_templates').select('*').eq('kind', 'partner').eq('is_current', true).maybeSingle()]);
+  var s = res[0].data || {}, t = res[1].data || {};
+  S.settings = s;
+  function p100(v) { return Math.round(Number(v) * 10000) / 100; }
+  setView('<div class="page-head"><div><h1>Settings</h1><p>Program defaults apply to every partner without a custom rate. Changes affect courses credited from now on.</p></div></div>' +
+    '<div class="two"><div class="panel">' +
+    '<h2 style="font-size:22px">Commission rules</h2>' +
+    '<div class="row2"><div class="field"><label class="f" for="stR">Standard rate (%)</label><input class="in" id="stR" type="number" step="0.5" value="' + p100(s.default_rate) + '"></div><div class="field"><label class="f" for="stTR">Senior Partner rate (%)</label><input class="in" id="stTR" type="number" step="0.5" value="' + p100(s.tier_rate) + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="stTT">Courses to reach Senior Partner</label><input class="in" id="stTT" type="number" min="1" value="' + esc(s.tier_threshold) + '"></div><div class="field"><label class="f" for="stM">Months each course earns</label><input class="in" id="stM" type="number" min="1" value="' + esc(s.attribution_months) + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="stP">Days a professor stays reserved</label><input class="in" id="stP" type="number" min="1" value="' + esc(s.lead_protection_days) + '"></div><div class="field"><label class="f" for="stMin">Minimum payout ($)</label><input class="in" id="stMin" type="number" min="0" value="' + (s.min_payout_cents / 100) + '"></div></div>' +
+    '<div class="field"><label class="f" for="stE">Partner support email</label><input class="in" id="stE" type="email" value="' + esc(s.support_email) + '"></div>' +
+    '<label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:6px 0 14px"><input type="checkbox" id="stOpen" style="margin-top:4px"' + (s.agreements_open ? ' checked' : '') + '><span><b>Agreement signing open</b><br>Turn on only after counsel has reviewed the partner agreement. Until then approved partners can read it but not sign.</span></label>' +
+    '<button class="btn primary" id="stSave">Save settings</button></div>' +
+    '<div class="panel"><h2 style="font-size:22px">Partner agreement</h2><p class="hint" style="margin-top:0">Current version ' + esc(t.version) + '. Publishing creates a new version for future signers; signed copies never change. Fields like {{rate}}, {{partner_name}}, {{months}} are filled in per partner.</p>' +
+    '<div class="field"><label class="f" for="agT">Title</label><input class="in" id="agT" value="' + esc(t.title) + '"></div>' +
+    '<div class="field"><label class="f" for="agB">Text (lines starting with “## ” become section headings)</label><textarea class="in" id="agB" style="min-height:340px;font-size:13.5px">' + esc(t.body) + '</textarea></div>' +
+    '<div class="toolbar"><button class="btn" id="agPrev">Preview</button><button class="btn primary" id="agPub">Publish new version</button></div></div></div>');
+  $('#stSave').addEventListener('click', async function () {
+    var row = { default_rate: Number(val('stR')) / 100, tier_rate: Number(val('stTR')) / 100, tier_threshold: parseInt(val('stTT'), 10), attribution_months: parseInt(val('stM'), 10), lead_protection_days: parseInt(val('stP'), 10), min_payout_cents: Math.round(Number(val('stMin')) * 100), support_email: val('stE'), agreements_open: $('#stOpen').checked, updated_at: new Date().toISOString() };
+    if (!(row.default_rate >= 0 && row.default_rate <= 1 && row.tier_rate >= 0 && row.tier_rate <= 1)) { toast('Rates must be between 0 and 100.', true); return; }
+    if (row.agreements_open && !s.agreements_open && !window.confirm('Open agreement signing? Do this only once counsel has reviewed the agreement text.')) return;
+    var r = await sb.from('mp_settings').update(row).eq('id', 'default').select().maybeSingle();
+    if (r.error || !r.data) { toast(r.error ? errMsg(r.error) : 'Not saved', true); return; }
+    S.settings = r.data; toast('Settings saved');
+  });
+  $('#agPrev').addEventListener('click', function () { openLayer('modal', 'Preview', 'Fields are filled in when each partner signs.', '<div class="agreement" style="max-height:60vh">' + agreementHtml($('#agB').value) + '</div>', '<button class="btn primary" data-close>Close</button>'); $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); }); });
+  $('#agPub').addEventListener('click', async function () {
+    if (!window.confirm('Publish this as version ' + ((t.version || 0) + 1) + '? Partners who sign from now on get this text.')) return;
+    var r = await sb.rpc('mp_admin_publish_template', { p_kind: 'partner', p_title: val('agT'), p_body: $('#agB').value });
+    if (r.error) { toast(errMsg(r.error), true); return; } toast('Version ' + r.data.version + ' published'); aSettings();
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
