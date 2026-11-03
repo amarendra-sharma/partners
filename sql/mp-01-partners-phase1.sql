@@ -763,7 +763,20 @@ do $$ declare f record; begin
     execute 'grant execute on function ' || f.sig || ' to authenticated';
   end loop;
 end $$;
-grant execute on function mp_log_click(text,text,text) to anon, authenticated;
+-- Public (signed-out) entry points, whichever files are installed.
+do $$ declare f record; begin
+  for f in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname in ('mp_log_click','mp_referral_info','mp_referral_signup',
+                                                         'mp_request_order','mp_request_prefill','mp_invoice_view') loop
+    execute 'grant execute on function ' || f.sig || ' to anon';
+  end loop;
+end $$;
+do $$ declare f record; begin
+  for f in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname like 'mp\_\_%' loop
+    execute 'revoke all on function ' || f.sig || ' from authenticated';
+  end loop;
+end $$;
 grant select on mp_partners, mp_agreement_templates, mp_agreements, mp_leads, mp_lead_events, mp_clicks,
                mp_attributions, mp_ledger, mp_resources, mp_settings, mp_admins to authenticated;
 grant insert on mp_lead_events to authenticated;

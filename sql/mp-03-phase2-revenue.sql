@@ -154,9 +154,14 @@ declare
   r mp_payments; ref text; pfx text; stu text; crs text; d date;
   a mp_attributions; ptn mp_partners; lid text; note text; st text;
   n_credit int := 0; n_refund int := 0; n_open int := 0;
-  f record; pay mp_payments; l mp_ledger; target int; current_total int;
+  f record; pay mp_payments; l mp_ledger; target int; current_total int; n_inst int := 0;
 begin
   if not mp__trusted() then raise exception 'Not allowed.'; end if;
+
+  -- Institutional-order payments (mp-05) are matched to their order first.
+  if exists (select 1 from pg_proc where proname = 'mp__match_institutional') then
+    execute 'select mp__match_institutional()' into n_inst;
+  end if;
 
   -- Keep each payment's refunded total current.
   update mp_payments p set refunded_cents = x.total
@@ -169,6 +174,8 @@ begin
             order by created_at_stripe loop
     ref := coalesce(r.client_reference_id, ''); pfx := null; stu := null; crs := null; a := null; note := null;
     d := (r.created_at_stripe at time zone 'America/New_York')::date;
+
+    if ref like 'inst|%' then continue; end if;          -- institutional orders (mp-05)
 
     if r.metadata ? 'team_id' then
       update mp_payments set match_status = 'ignored', product = 'tournament', match_note = 'Tournament entry fee' where id = r.id;
@@ -261,7 +268,7 @@ begin
     n_refund := n_refund + 1;
   end loop;
 
-  return jsonb_build_object('credited', n_credit, 'refunds', n_refund, 'open', n_open);
+  return jsonb_build_object('credited', n_credit, 'refunds', n_refund, 'open', n_open, 'institutional', n_inst);
 end $$;
 
 -- Admin: point a payment at a credited course by hand, or set it aside.
@@ -486,9 +493,20 @@ do $$ declare f record; begin
     execute 'grant execute on function ' || f.sig || ' to authenticated';
   end loop;
 end $$;
-grant execute on function mp_log_click(text,text,text) to anon;
-grant execute on function mp_referral_info(text) to anon;
-grant execute on function mp_referral_signup(text,text,text,text,text) to anon;
+-- Public (signed-out) entry points, whichever files are installed.
+do $$ declare f record; begin
+  for f in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname in ('mp_log_click','mp_referral_info','mp_referral_signup',
+                                                         'mp_request_order','mp_request_prefill','mp_invoice_view') loop
+    execute 'grant execute on function ' || f.sig || ' to anon';
+  end loop;
+end $$;
+do $$ declare f record; begin
+  for f in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname like 'mp\_\_%' loop
+    execute 'revoke all on function ' || f.sig || ' from authenticated';
+  end loop;
+end $$;
 -- Internal helpers are not callable from the browser at all.
 revoke all on function mp__trusted() from authenticated;
 revoke all on function mp__lead_conflict(text,text) from authenticated;

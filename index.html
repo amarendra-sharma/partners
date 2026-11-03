@@ -223,6 +223,7 @@ table.t tr.click:hover td{background:#FAFBFD}
 
 /* ---------- print (agreement) ---------- */
 @media print{
+  .no-print{display:none !important}
   body *{visibility:hidden}
   #printArea,#printArea *{visibility:visible}
   #printArea{position:absolute;left:0;top:0;width:100%;max-height:none;overflow:visible;border:0}
@@ -396,6 +397,98 @@ function openLayer(kind, title, sub, bodyHtml, footHtml) {
   }, go);
 })();
 
+/* ---------------- institutional billing: public pages ---------------- */
+function qparam(k) { var m = new RegExp('[?&]' + k + '=([^&#]*)').exec(window.location.search); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; }
+var PRODUCT_NAMES = { im: 'Introduction to Microeconomics', ma: 'Macroeconomics', sa: 'Game Theory', eq: 'Econometrics', it: 'International Trade', fin: 'Finance', ef: 'Economics & Film' };
+
+(function billingRequestPage() {
+  if (!/[?&]billing(=|&|$)/.test(window.location.search)) return;
+  window.__referral = true;
+  var product = qparam('product'), courseId = qparam('course'), title = qparam('title'), term = qparam('term');
+  var prodOpts = Object.keys(PRODUCT_NAMES).map(function (k) { return '<option value="' + k + '"' + (k === product ? ' selected' : '') + '>' + PRODUCT_NAMES[k] + '</option>'; }).join('');
+  document.getElementById('app').innerHTML = '<div class="center-card" style="max-width:720px"><div class="brand" style="margin-bottom:24px;color:var(--navy)"><span class="brand-mark" aria-hidden="true">M</span> MacroNations</div>' +
+    '<div class="panel" id="brBox"><h2>Institutional billing</h2><p style="margin-top:0;color:var(--ink-2)">Use this form when a university, college or department will pay for the students in a course section. Students get access straight away; MacroNations sends the invoice to your billing contact.</p>' +
+    '<form id="brF" novalidate>' +
+    '<h3 style="font-size:15px;margin:22px 0 10px">Course</h3>' +
+    '<div class="row2"><div class="field"><label class="f" for="brP">Course</label><select class="in" id="brP"' + (product ? ' disabled' : '') + '>' + (product ? '' : '<option value="">Choose…</option>') + prodOpts + '</select></div>' +
+    '<div class="field"><label class="f" for="brT">Term</label><input class="in" id="brT" value="' + esc(term) + '" placeholder="e.g. Spring 2027"></div></div>' +
+    '<div class="field"><label class="f" for="brL">Section name</label><input class="in" id="brL" value="' + esc(title) + '" placeholder="e.g. ECON 101 Section 2"></div>' +
+    '<div class="field"><label class="f" for="brS">Number of students (seats)</label><input class="in" id="brS" type="number" min="1" max="5000" inputmode="numeric" style="max-width:180px"><div class="hint" id="brPrice"></div></div>' +
+    '<h3 style="font-size:15px;margin:22px 0 10px">Who is paying</h3>' +
+    '<div class="row2"><div class="field"><label class="f" for="brI">Institution</label><input class="in" id="brI" autocomplete="organization"></div>' +
+    '<div class="field"><label class="f" for="brD">Department (optional)</label><input class="in" id="brD"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="brCN">Billing contact name</label><input class="in" id="brCN"></div>' +
+    '<div class="field"><label class="f" for="brCE">Billing contact email</label><input class="in" id="brCE" type="email"><div class="hint">The invoice is sent here.</div></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="brA">Billing address (optional)</label><textarea class="in" id="brA" style="min-height:70px"></textarea></div>' +
+    '<div class="field"><label class="f" for="brPO">Purchase order number (optional)</label><input class="in" id="brPO"><div class="hint">Shown on the invoice if your finance office needs it.</div></div></div>' +
+    '<h3 style="font-size:15px;margin:22px 0 10px">You</h3>' +
+    '<div class="row2"><div class="field"><label class="f" for="brRN">Your name</label><input class="in" id="brRN" autocomplete="name"></div>' +
+    '<div class="field"><label class="f" for="brRE">Your email</label><input class="in" id="brRE" type="email" autocomplete="email"></div></div>' +
+    '<div class="field"><label class="f" for="brN">Anything we should know? (optional)</label><textarea class="in" id="brN" style="min-height:70px" placeholder="Deadlines, payment preferences, a contact in your finance office…"></textarea></div>' +
+    '<p class="err" id="brErr" role="alert"></p><button class="btn primary" id="brBtn" style="padding:11px 18px">Send request</button></form></div></div>';
+  var lockedProduct = product;
+  function priceHint() {
+    var p = lockedProduct || $('#brP').value; if (!p) { $('#brPrice').textContent = ''; return; }
+    sb.rpc('mp_request_prefill', { p_product: p }).then(function (r) {
+      var d = r && r.data; if (!d) return;
+      var n = parseInt($('#brS').value, 10);
+      $('#brPrice').textContent = d.seat_price_cents ? ('Standard price ' + money(d.seat_price_cents) + ' per student' + (n > 0 ? ' · about ' + money(d.seat_price_cents * n) + ' for ' + n + '. Volume and department pricing available.' : '. Volume and department pricing available.')) : '';
+      if (!val('brL') && d.label) $('#brL').placeholder = d.label;
+    });
+  }
+  priceHint(); $('#brS').addEventListener('input', priceHint); if (!lockedProduct) $('#brP').addEventListener('change', priceHint);
+  $('#brF').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var out = $('#brErr'), p = lockedProduct || $('#brP').value, seats = parseInt(val('brS'), 10);
+    if (!p) { out.textContent = 'Please choose the course.'; return; }
+    if (!(seats > 0)) { out.textContent = 'Please enter the number of students.'; return; }
+    if (!val('brI') || !val('brRN')) { out.textContent = 'Please enter the institution and your name.'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('brRE'))) { out.textContent = 'Please enter your email address.'; return; }
+    var btn = $('#brBtn'); busy(btn, true, 'Sending…');
+    var r = await sb.rpc('mp_request_order', { p_product: p, p_course_id: courseId || null, p_course_label: val('brL') || null, p_term: val('brT') || null,
+      p_institution: val('brI'), p_department: val('brD') || null, p_contact_name: val('brCN') || null, p_contact_email: val('brCE') || null,
+      p_billing_address: val('brA') || null, p_po_number: val('brPO') || null, p_seats: seats, p_requester_name: val('brRN'),
+      p_requester_email: val('brRE'), p_notes: val('brN') || null });
+    busy(btn, false);
+    if (r.error) { out.textContent = errMsg(r.error); return; }
+    $('#brBox').innerHTML = '<h2>Request received</h2><p>Thank you. Your reference is <b>' + esc(r.data.number) + '</b>. MacroNations will confirm the details and send the invoice to ' + esc(val('brCE') || val('brRE')) + '.</p>' +
+      '<p style="margin-bottom:0;color:var(--ink-2)">Students can join the course as usual; access is arranged as soon as the request is approved, usually within one business day.</p>';
+  });
+})();
+
+(function invoicePage() {
+  var token = qparam('invoice'); if (!token) return;
+  window.__referral = true;
+  document.getElementById('app').innerHTML = '<div class="center-card"><p>Loading invoice…</p></div>';
+  sb.rpc('mp_invoice_view', { p_token: token }).then(function (r) {
+    var v = r && r.data;
+    if (!v) { document.getElementById('app').innerHTML = '<div class="center-card"><div class="panel"><h2>Invoice not found</h2><p style="margin-bottom:0">This link is not valid or the invoice has been withdrawn. Please contact MacroNations.</p></div></div>'; return; }
+    var line = v.pricing === 'flat'
+      ? '<tr><td>' + esc(v.course_label) + (v.term ? ' — ' + esc(v.term) : '') + '<div class="hint" style="margin:0">Course licence' + (v.seats ? ', up to ' + v.seats + ' students' : '') + '</div></td><td class="r num">1</td><td class="r num">' + money(v.flat_amount_cents) + '</td><td class="r num">' + money(v.flat_amount_cents) + '</td></tr>'
+      : '<tr><td>' + esc(v.course_label) + (v.term ? ' — ' + esc(v.term) : '') + '<div class="hint" style="margin:0">Student access' + (v.is_topup ? ' (additional seats)' : '') + '</div></td><td class="r num">' + v.seats + '</td><td class="r num">' + money(v.unit_price_cents) + '</td><td class="r num">' + money(v.seats * v.unit_price_cents) + '</td></tr>' +
+        (Number(v.discount_pct) > 0 ? '<tr><td colspan="3">Discount (' + Number(v.discount_pct) + '%)</td><td class="r num">−' + money(v.seats * v.unit_price_cents - v.total_cents) + '</td></tr>' : '');
+    var paid = v.paid_cents > 0 ? '<tr><td colspan="3">Paid</td><td class="r num">−' + money(v.paid_cents) + '</td></tr>' : '';
+    var stamp = v.balance_cents <= 0 ? '<span class="tag money" style="font-size:14px;padding:4px 12px">Paid in full</span>' : '';
+    document.getElementById('app').innerHTML = '<div class="center-card" style="max-width:780px">' +
+      '<div class="panel invoice" id="printArea">' +
+      '<div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start">' +
+      '<div><div class="brand" style="color:var(--navy);margin-bottom:10px"><span class="brand-mark" aria-hidden="true">M</span> MacroNations</div><div style="white-space:pre-line;font-size:14px;color:var(--ink-2)">' + esc(v.company) + '</div></div>' +
+      '<div style="text-align:right"><h2 style="margin:0">Invoice</h2><div class="num" style="font-size:15px;margin-top:4px">' + esc(v.number) + '</div>' +
+      '<div style="font-size:14px;color:var(--ink-2);margin-top:6px">Issued ' + dfmt(v.issued) + (v.due ? '<br>Due ' + dfmt(v.due) : '') + '</div>' + (stamp ? '<div style="margin-top:8px">' + stamp + '</div>' : '') + '</div></div>' +
+      '<div class="row2" style="margin-top:26px"><div><span class="f">Bill to</span><div style="font-size:15px"><b>' + esc(v.institution) + '</b>' + (v.department ? '<br>' + esc(v.department) : '') + (v.contact_name ? '<br>' + esc(v.contact_name) : '') + (v.billing_address ? '<div style="white-space:pre-line;color:var(--ink-2)">' + esc(v.billing_address) + '</div>' : '') + '</div></div>' +
+      (v.po_number ? '<div><span class="f">Purchase order</span><div style="font-size:15px">' + esc(v.po_number) + '</div></div>' : '<div></div>') + '</div>' +
+      '<div class="table-wrap" style="margin-top:22px"><table class="t"><caption class="sr-only">Invoice lines</caption><thead><tr><th scope="col">Description</th><th scope="col" class="r">Qty</th><th scope="col" class="r">Unit price</th><th scope="col" class="r">Amount</th></tr></thead><tbody>' +
+      line + paid + '<tr><td colspan="3"><b>' + (v.paid_cents > 0 ? 'Balance due' : 'Total due') + '</b></td><td class="r num"><b>' + money(v.balance_cents) + '</b></td></tr></tbody></table></div>' +
+      (v.balance_cents > 0 ? '<div style="margin-top:22px"><span class="f">How to pay</span><p style="margin:4px 0 0;white-space:pre-line">' + esc(v.remit) + '</p></div>' : '') +
+      '</div>' +
+      '<div class="toolbar no-print" style="margin-top:16px">' + (v.pay_url && v.balance_cents > 0 ? '<a class="btn primary" href="' + esc(v.pay_url) + '" rel="noopener">Pay ' + money(v.balance_cents) + ' online</a>' : '') +
+      '<button class="btn" id="invPrint">Print or save as PDF</button></div>' +
+      (v.pay_url && v.balance_cents > 0 ? '<p class="hint no-print">Online payment is handled by Stripe. Enter the balance shown above.</p>' : '') + '</div>';
+    $('#invPrint').addEventListener('click', function () { window.print(); });
+    document.title = 'Invoice ' + v.number + ' — MacroNations';
+  }, function () { document.getElementById('app').innerHTML = '<div class="center-card"><p>Could not load the invoice. Please try again.</p></div>'; });
+})();
+
 /* ---------------- boot & auth ---------------- */
 async function boot() {
   if (window.__referral) return;
@@ -421,7 +514,7 @@ async function loadContext() {
 }
 
 function route() {
-  if (S.isAdmin) { if (['overview', 'partners', 'desk', 'revenue', 'payments', 'atoolkit', 'settings'].indexOf(S.view) < 0) S.view = 'overview'; return renderShell(); }
+  if (S.isAdmin) { if (['overview', 'partners', 'desk', 'revenue', 'orders', 'payments', 'atoolkit', 'settings'].indexOf(S.view) < 0) S.view = 'overview'; return renderShell(); }
   var st = S.me ? S.me.status : 'none';
   if (st === 'none' || st === 'rejected') return renderApply();
   if (st === 'applied') return renderPending();
@@ -584,7 +677,7 @@ async function renderSign() {
 function navDef() {
   if (S.isAdmin) return [
     ['overview', 'Overview', ICON.home], ['partners', 'Partners', ICON.users], ['desk', 'Deal desk', ICON.desk],
-    ['revenue', 'Courses & revenue', ICON.money], ['payments', 'Stripe payments', ICON.card], ['atoolkit', 'Toolkit', ICON.kit], ['settings', 'Settings', ICON.gear]];
+    ['revenue', 'Courses & revenue', ICON.money], ['orders', 'Institutional orders', ICON.doc], ['payments', 'Stripe payments', ICON.card], ['atoolkit', 'Toolkit', ICON.kit], ['settings', 'Settings', ICON.gear]];
   return [['home', 'Home', ICON.home], ['pipeline', 'Professors', ICON.pipe], ['toolkit', 'Toolkit', ICON.kit], ['earnings', 'Earnings', ICON.money], ['agreement', 'Agreement', ICON.doc]];
 }
 function renderShell() {
@@ -604,7 +697,7 @@ function badge(v, n) { var b = $('#bdg-' + v); if (!b) return; if (n > 0) { b.te
 function setView(html) { $('#view').innerHTML = html; }
 function loading() { setView('<p style="color:var(--ink-2)">Loading…</p>'); }
 function renderView() {
-  var map = { home: pHome, pipeline: pPipeline, toolkit: pToolkit, earnings: pEarnings, agreement: pAgreement, payments: aPayments,
+  var map = { home: pHome, pipeline: pPipeline, toolkit: pToolkit, earnings: pEarnings, agreement: pAgreement, payments: aPayments, orders: aOrders,
     overview: aOverview, partners: aPartners, desk: aDesk, revenue: aRevenue, atoolkit: aToolkit, settings: aSettings };
   (map[S.view] || pHome)();
 }
@@ -883,10 +976,12 @@ async function pAgreement() {
    ADMIN VIEWS
    ====================================================================== */
 async function adminBadges() {
-  var res = await Promise.all([sb.rpc('mp_admin_overview'), sb.rpc('mp_admin_course_suggestions'), sb.rpc('mp_admin_sync_status')]);
+  var res = await Promise.all([sb.rpc('mp_admin_overview'), sb.rpc('mp_admin_course_suggestions'), sb.rpc('mp_admin_sync_status'), sb.rpc('mp_admin_order_counts')]);
   var d = res[0].data || {};
   d.suggestions = (res[1].data || []).length;
   d.sync = res[2].data || {};
+  d.orders = res[3].data || {};
+  badge('orders', (d.orders.requested || 0) + (d.orders.overdue || 0) + (d.orders.topups || 0));
   badge('partners', (d.applications || 0)); badge('desk', (d.conflicts || 0) + d.suggestions);
   badge('payments', d.sync.last_error ? 1 : 0);
   return d;
@@ -901,6 +996,10 @@ async function aOverview() {
   if (d.applications) attn.push(['partners', d.applications + ' application' + (d.applications > 1 ? 's' : '') + ' to review', 'Approve or decline new partners.']);
   if (d.conflicts) attn.push(['desk', d.conflicts + ' professor' + (d.conflicts > 1 ? 's' : '') + ' claimed twice', 'Decide which partner is credited.']);
   if (d.awaiting_sign) attn.push(['partners', d.awaiting_sign + ' approved partner' + (d.awaiting_sign > 1 ? 's' : '') + ' waiting to sign', S.settings && !S.settings.agreements_open ? 'Signing is switched off in Settings until the agreement is reviewed.' : 'They have been approved and need to sign.']);
+  var od = d.orders || {};
+  if (od.requested) attn.push(['orders', od.requested + ' institutional billing request' + (od.requested > 1 ? 's' : '') + ' to approve', 'Approving gives the students access.']);
+  if (od.overdue) attn.push(['orders', od.overdue + ' institutional invoice' + (od.overdue > 1 ? 's' : '') + ' overdue', 'Follow up with the billing contact.']);
+  if (od.topups) attn.push(['orders', od.topups + ' section' + (od.topups > 1 ? 's have' : ' has') + ' more students than paid seats', 'Invoice a top-up from the order.']);
   if (d.suggestions) attn.push(['desk', d.suggestions + ' new course' + (d.suggestions > 1 ? 's' : '') + ' from partners’ professors', 'Check and credit them on the Deal desk.']);
   if (d.owed_cents) attn.push(['revenue', money(d.owed_cents) + ' in commissions to approve or pay', 'Review the statement under Courses & revenue.']);
   if (d.sync && d.sync.last_error) attn.push(['payments', 'The last Stripe check failed', String(d.sync.last_error).slice(0, 120)]);
@@ -1098,6 +1197,175 @@ async function aRevenue() {
   $$('[data-rev]').forEach(function (b) { b.addEventListener('click', function () { var a = null; at.forEach(function (x) { if (x.id === b.dataset.rev) a = x; }); revenueModal(a, names[a.partner_id]); }); });
 }
 
+/* ---------------- institutional orders (admin) ---------------- */
+var ORDER_STATUS = { requested: ['To approve', 'amber'], approved: ['Approved · invoice not sent', 'navy'], invoiced: ['Invoice sent', 'navy'], partially_paid: ['Part paid', 'amber'], paid: ['Paid', 'money'], cancelled: ['Cancelled', ''] };
+function orderTag(o) { if (o.overdue) return '<span class="tag warn">Overdue</span>'; var s = ORDER_STATUS[o.status] || [o.status, '']; return '<span class="tag ' + s[1] + '">' + s[0] + '</span>'; }
+function invoiceUrl(o) { return PORTAL_URL + '?invoice=' + o.invoice_token; }
+function centsIn(id) { var v = val(id); return v === '' ? null : Math.round(Number(v) * 100); }
+
+async function aOrders() {
+  loading(); adminBadges();
+  var r = await sb.rpc('mp_admin_orders');
+  if (r.error) { setView('<p class="err">' + esc(errMsg(r.error)) + '</p>'); return; }
+  var os = r.data || [];
+  S.cache.orders = os;
+  var F = [['todo', 'Needs action'], ['awaiting', 'Awaiting payment'], ['paid', 'Paid'], ['cancelled', 'Cancelled'], ['all', 'All']];
+  function match(o, f) {
+    if (f === 'all') return true;
+    if (f === 'todo') return o.status === 'requested' || o.status === 'approved' || o.overdue || o.topup_seats > 0;
+    if (f === 'awaiting') return ['approved', 'invoiced', 'partially_paid'].indexOf(o.status) >= 0;
+    return o.status === f;
+  }
+  var flt = S.cache.oFilter || (os.some(function (o) { return match(o, 'todo'); }) ? 'todo' : 'all');
+  var list = os.filter(function (o) { return match(o, flt); });
+  var outstanding = 0; os.forEach(function (o) { if (['approved', 'invoiced', 'partially_paid'].indexOf(o.status) >= 0) outstanding += Math.max(o.total_cents - o.paid_cents, 0); });
+  var received = 0; os.forEach(function (o) { received += o.paid_cents; });
+  setView('<div class="page-head"><div><h1>Institutional orders</h1><p>When a university or department pays for a section’s students. Approving an order gives the students access; the invoice can be paid online or by cheque or transfer.</p></div><button class="btn primary" id="oNew">New order</button></div>' +
+    (S.settings && !S.settings.inst_payment_link ? '<div class="callout amber">Online payment is not set up yet, so invoices only show bank and cheque instructions. Add your Stripe payment link in <a href="#" id="goSet">Settings → Institutional billing</a>.</div>' : '') +
+    '<div class="tiles"><div class="tile"><div class="v">' + os.filter(function (o) { return o.status === 'requested'; }).length + '</div><div class="k">Requests to approve</div></div><div class="tile"><div class="v">' + money(outstanding) + '</div><div class="k">Invoiced, not yet paid</div></div><div class="tile"><div class="v" style="color:var(--money)">' + money(received) + '</div><div class="k">Received from institutions</div></div><div class="tile"><div class="v">' + os.filter(function (o) { return o.overdue; }).length + '</div><div class="k">Overdue</div></div></div>' +
+    '<div class="filters" style="margin-top:18px" role="group" aria-label="Filter orders">' + F.map(function (x) { var n = os.filter(function (o) { return match(o, x[0]); }).length; return '<button data-of="' + x[0] + '" aria-pressed="' + (flt === x[0]) + '">' + x[1] + ' (' + n + ')</button>'; }).join('') + '</div>' +
+    (list.length ? '<div class="table-wrap"><table class="t"><caption class="sr-only">Institutional orders</caption><thead><tr><th scope="col">Order</th><th scope="col">Institution</th><th scope="col">Course</th><th scope="col" class="r">Seats</th><th scope="col" class="r">Total</th><th scope="col" class="r">Paid</th><th scope="col">Status</th></tr></thead><tbody>' +
+      list.map(function (o) {
+        var seats = o.seats + (o.seats_used != null ? '<div class="hint" style="margin:0' + (o.topup_seats > 0 ? ';color:var(--warn)' : '') + '">' + o.seats_used + ' enrolled</div>' : '');
+        return '<tr class="click" data-o="' + o.id + '" tabindex="0"><td><b class="num">' + esc(o.number) + '</b>' + (o.parent_number ? '<div class="hint" style="margin:0">top-up of ' + esc(o.parent_number) + '</div>' : (o.source === 'request' ? '<div class="hint" style="margin:0">requested by ' + esc(o.requester_name || '') + '</div>' : '')) + '</td>' +
+          '<td>' + esc(o.institution) + (o.department ? '<div class="hint" style="margin:0">' + esc(o.department) + '</div>' : '') + '</td><td>' + esc(o.course_label) + '<div class="hint" style="margin:0">' + esc(PRODUCT_NAMES[o.product] || o.product) + (o.partner_name ? ' · partner ' + esc(o.partner_name) : '') + '</div></td>' +
+          '<td class="r num">' + seats + '</td><td class="r num">' + money(o.total_cents) + '</td><td class="r num">' + money(o.paid_cents) + '</td><td>' + orderTag(o) + (o.topup_seats > 0 ? '<div style="margin-top:4px"><span class="tag warn">' + o.topup_seats + ' over</span></div>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>'
+      : '<div class="list"><div class="empty">' + (os.length ? 'Nothing in this view.' : 'No institutional orders yet. Instructors can request one from their course, or create one here with “New order”.') + '</div></div>') +
+    '<div class="linkcard" style="margin-top:22px"><span class="f" style="display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px">Request form for instructors and department staff</span><div class="linkrow"><code>' + esc(PORTAL_URL + '?billing') + '</code><button class="btn" id="cpBill">Copy</button></div><p class="hint" style="margin:8px 0 0">Course consoles open this form already filled in for the section. You can also send the link to a department directly.</p></div>');
+  $('#oNew').addEventListener('click', function () { orderForm(null); });
+  var gs = $('#goSet'); if (gs) gs.addEventListener('click', function (e) { e.preventDefault(); go('settings'); });
+  $('#cpBill').addEventListener('click', function () { copyText(PORTAL_URL + '?billing', 'Link'); });
+  $$('[data-of]').forEach(function (b) { b.addEventListener('click', function () { S.cache.oFilter = b.dataset.of; aOrders(); }); });
+  $$('[data-o]').forEach(function (tr) { function o() { openOrder(tr.dataset.o); } tr.addEventListener('click', o); tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') o(); }); });
+}
+
+function findOrder(id) { var os = S.cache.orders || []; for (var i = 0; i < os.length; i++) if (os[i].id === id) return os[i]; return null; }
+
+async function openOrder(id) {
+  var o = findOrder(id); if (!o) return;
+  var pr = await sb.rpc('mp_admin_order_payments', { p_order: id });
+  var pays = pr.data || [];
+  var bal = Math.max(o.total_cents - o.paid_cents, 0);
+  var acts = [];
+  if (o.status === 'requested') acts.push('<button class="btn danger" data-oa="cancel">Decline</button>', '<button class="btn primary" data-oa="approve">Approve and give students access</button>');
+  else if (o.status !== 'cancelled') {
+    if (o.paid_cents === 0) acts.push('<button class="btn danger" data-oa="cancel">Cancel order</button>');
+    if (bal > 0) acts.push('<button class="btn" id="oPay">Record a payment</button>');
+    acts.push('<button class="btn" id="oEmail">Email invoice</button>', '<a class="btn primary" href="' + esc(invoiceUrl(o)) + '" target="_blank" rel="noopener">Open invoice</a>');
+  } else acts.push('<button class="btn" data-oa="reopen">Reopen</button>');
+  var accessLine = o.access_granted ? '<span class="tag money">Students have access</span>' : (o.status === 'requested' ? '<span class="tag">Not yet</span>' : '<span class="tag amber">Not switched automatically</span>');
+  openLayer('drawer', o.number + ' · ' + o.institution, esc(o.course_label) + ' · ' + esc(PRODUCT_NAMES[o.product] || o.product) + ' &nbsp;' + orderTag(o),
+    (o.status === 'requested' ? '<div class="callout info">Requested by <b>' + esc(o.requester_name || '') + '</b> (' + esc(o.requester_email || '') + ') on ' + dfmt(o.created_at) + '. Check the details and price, then approve. Students get access as soon as you approve.' + (o.notes ? '<div style="margin-top:6px">“' + esc(o.notes) + '”</div>' : '') + '</div>' : '') +
+    (o.topup_seats > 0 ? '<div class="callout warn"><b>' + o.seats_used + ' students enrolled, ' + (o.seats_used - o.topup_seats) + ' paid for.</b> Students keep access. <button class="btn sm" id="oTop" style="margin-left:6px">Invoice ' + o.topup_seats + ' more seats</button></div>' : '') +
+    '<dl class="kv"><dt>Total</dt><dd><b>' + money(o.total_cents) + '</b>' + (o.paid_cents ? ' · paid ' + money(o.paid_cents) + (bal ? ' · <b>' + money(bal) + ' due</b>' : '') : '') + '</dd>' +
+    '<dt>Due</dt><dd>' + (o.due_date ? dfmt(o.due_date) + (o.overdue ? ' <span class="tag warn">Overdue</span>' : '') : 'Set when you send the invoice') + '</dd>' +
+    '<dt>Student access</dt><dd>' + accessLine + (o.access_note ? '<div class="hint" style="margin:2px 0 0">' + esc(o.access_note) + '</div>' : '') + (!o.access_granted && o.status !== 'requested' && o.status !== 'cancelled' && ['im', 'ma', 'it', 'eq'].indexOf(o.product) >= 0 && o.course_id ? '<div style="margin-top:6px"><button class="btn sm" data-oa="grant_access">Give students access now</button></div>' : '') + '</dd>' +
+    '<dt>Partner</dt><dd>' + (o.partner_name ? esc(o.partner_name) + ' earns commission on payments' : 'None — no commission') + '</dd>' +
+    '<dt>Invoice link</dt><dd>' + (o.status === 'requested' || o.status === 'cancelled' ? '<span class="hint">Available after approval</span>' : '<button class="btn sm" id="oCopy">Copy link</button>') + '</dd></dl>' +
+    '<h3 style="font-size:15px;margin:14px 0 8px">Payments</h3>' +
+    (pays.length ? '<ul class="timeline">' + pays.map(function (p) { return '<li><div><b>' + money(p.amount_cents) + '</b> by ' + esc({ stripe: 'online (Stripe)', ach: 'ACH', wire: 'wire transfer', check: 'cheque', card: 'card', other: 'other' }[p.method] || p.method) + (p.reference ? ' · ' + esc(p.reference.length > 24 ? p.reference.slice(0, 24) + '…' : p.reference) : '') + (p.fees_cents ? ' · fees ' + money(p.fees_cents) : '') + '</div><div class="when">' + dfmt(p.received_on) + '</div></li>'; }).join('') + '</ul>' : '<p class="hint">None yet. Online payments appear here within the hour.</p>') +
+    '<h3 style="font-size:15px;margin:18px 0 8px">Details</h3><button class="btn sm" id="oEdit">Edit details and price</button>',
+    acts.join(''));
+  function after(msg) { closeLayer(); toast(msg); aOrders().then(function () { openOrder(id); }); }
+  $$('[data-oa]').forEach(function (b) { b.addEventListener('click', async function () {
+    var a = b.dataset.oa, endAccess = false;
+    if (a === 'cancel') {
+      if (!window.confirm(o.status === 'requested' ? 'Decline this request?' : 'Cancel order ' + o.number + '?')) return;
+      if (o.access_granted) endAccess = window.confirm('Also remove the students’ free access for this section?\n\nOK = remove access · Cancel = leave access as it is');
+    }
+    var r = await sb.rpc('mp_admin_order_action', { p_order: id, p_action: a, p_end_access: endAccess });
+    if (r.error) { toast(errMsg(r.error), true); return; }
+    after((r.data && r.data.message) || 'Updated');
+  }); });
+  var oc = $('#oCopy'); if (oc) oc.addEventListener('click', function () { copyText(invoiceUrl(o), 'Invoice link'); });
+  var oe = $('#oEmail'); if (oe) oe.addEventListener('click', async function () {
+    if (o.status === 'approved') { var r = await sb.rpc('mp_admin_order_action', { p_order: id, p_action: 'sent' }); if (r.error) { toast(errMsg(r.error), true); return; } }
+    var subj = 'Invoice ' + o.number + ' — MacroNations — ' + o.course_label;
+    var body = 'Dear ' + (o.contact_name || 'colleague') + ',\n\nPlease find MacroNations invoice ' + o.number + ' for ' + o.course_label + (o.term ? ' (' + o.term + ')' : '') + ' at ' + o.institution + (o.po_number ? ', PO ' + o.po_number : '') + '.\n\nAmount due: ' + money(bal || o.total_cents) + '\n\nView, download or pay the invoice here:\n' + invoiceUrl(o) + '\n\nThank you,\nMacroNations';
+    window.location.href = 'mailto:' + encodeURIComponent(o.contact_email || '') + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body);
+    toast('Invoice marked as sent'); aOrders();
+  });
+  var op = $('#oPay'); if (op) op.addEventListener('click', function () { orderPaymentModal(o, bal); });
+  var ot = $('#oTop'); if (ot) ot.addEventListener('click', async function () {
+    var n = parseInt(window.prompt('How many extra seats should the top-up invoice cover?', String(o.topup_seats)), 10); if (!(n > 0)) return;
+    var r = await sb.rpc('mp_admin_create_topup', { p_order: id, p_seats: n }); if (r.error) { toast(errMsg(r.error), true); return; }
+    closeLayer(); toast('Top-up ' + r.data.number + ' created for ' + money(r.data.total_cents)); await aOrders(); openOrder(r.data.id);
+  });
+  $('#oEdit').addEventListener('click', function () { orderForm(o); });
+}
+
+async function orderForm(o) {
+  var res = await Promise.all([sb.from('mp_price_defaults').select('*'), sb.from('mp_attributions').select('id,course_label,partner_id,status').neq('status', 'void').order('course_label'), sb.from('mp_partners').select('id,full_name')]);
+  var pds = {}; (res[0].data || []).forEach(function (p) { pds[p.product] = p; });
+  var names = {}; (res[2].data || []).forEach(function (p) { names[p.id] = p.full_name; });
+  var ats = res[1].data || [];
+  var isNew = !o; o = o || { product: 'im', pricing: 'per_seat', seats: 30, unit_price_cents: pds.im ? pds.im.seat_price_cents : 2500, discount_pct: 0, flat_amount_cents: 0 };
+  var prodOpts = Object.keys(PRODUCT_NAMES).map(function (k) { return '<option value="' + k + '"' + (o.product === k ? ' selected' : '') + '>' + PRODUCT_NAMES[k] + '</option>'; }).join('');
+  var atOpts = '<option value="">Find it automatically from the course id</option>' + ats.map(function (a) { return '<option value="' + a.id + '"' + (o.attribution_id === a.id ? ' selected' : '') + '>' + esc(a.course_label) + ' (' + esc(names[a.partner_id] || '') + ')</option>'; }).join('');
+  openLayer('modal', isNew ? 'New institutional order' : 'Edit ' + o.number, null,
+    '<div class="row2"><div class="field"><label class="f" for="ofP">Course</label><select class="in" id="ofP">' + prodOpts + '</select></div>' +
+    '<div class="field"><label class="f" for="ofC">Course id in that console</label><input class="in" id="ofC" value="' + esc(o.course_id || '') + '"><div class="hint">Needed for access and seat counts.</div></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ofL">Section name</label><input class="in" id="ofL" value="' + esc(o.course_label || '') + '"></div><div class="field"><label class="f" for="ofT">Term</label><input class="in" id="ofT" value="' + esc(o.term || '') + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ofI">Institution</label><input class="in" id="ofI" value="' + esc(o.institution || '') + '"></div><div class="field"><label class="f" for="ofD">Department</label><input class="in" id="ofD" value="' + esc(o.department || '') + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ofCN">Billing contact</label><input class="in" id="ofCN" value="' + esc(o.contact_name || '') + '"></div><div class="field"><label class="f" for="ofCE">Billing email</label><input class="in" id="ofCE" type="email" value="' + esc(o.contact_email || '') + '"></div></div>' +
+    '<div class="row2"><div class="field"><label class="f" for="ofA">Billing address</label><textarea class="in" id="ofA" style="min-height:60px">' + esc(o.billing_address || '') + '</textarea></div><div class="field"><label class="f" for="ofPO">PO number</label><input class="in" id="ofPO" value="' + esc(o.po_number || '') + '"></div></div>' +
+    '<div class="field"><span class="f">Price</span><div class="stagebar" id="ofPr"><button type="button" data-v="per_seat" aria-pressed="' + (o.pricing !== 'flat') + '">Per student</button><button type="button" data-v="flat" aria-pressed="' + (o.pricing === 'flat') + '">Flat licence</button></div></div>' +
+    '<div class="row2" style="grid-template-columns:1fr 1fr 1fr"><div class="field"><label class="f" for="ofS">Seats</label><input class="in" id="ofS" type="number" min="0" value="' + (o.seats || 0) + '"></div>' +
+    '<div class="field ps"><label class="f" for="ofU">Price per student ($)</label><input class="in" id="ofU" type="number" step="0.01" min="0" value="' + ((o.unit_price_cents || 0) / 100) + '"></div>' +
+    '<div class="field ps"><label class="f" for="ofDc">Discount (%)</label><input class="in" id="ofDc" type="number" step="0.5" min="0" max="100" value="' + Number(o.discount_pct || 0) + '"></div>' +
+    '<div class="field fl"><label class="f" for="ofF">Licence amount ($)</label><input class="in" id="ofF" type="number" step="0.01" min="0" value="' + ((o.flat_amount_cents || 0) / 100) + '"></div></div>' +
+    '<p class="num" id="ofTot" style="margin:0 0 14px"></p>' +
+    '<div class="row2"><div class="field"><label class="f" for="ofAt">Partner credit</label><select class="in" id="ofAt">' + atOpts + '</select></div><div class="field"><label class="f" for="ofDue">Due date</label><input class="in" id="ofDue" type="date" value="' + esc(o.due_date || '') + '"><div class="hint">Leave empty: set to ' + ((S.settings && S.settings.inst_terms_days) || 30) + ' days after sending.</div></div></div>' +
+    '<div class="field"><label class="f" for="ofN">Private notes</label><input class="in" id="ofN" value="' + esc(o.admin_notes || '') + '"></div>' +
+    (isNew ? '<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ofG" checked> Give the section’s students access now</label>' : '') +
+    '<p class="err" id="ofErr" role="alert"></p>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="ofSave">' + (isNew ? 'Create order' : 'Save') + '</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  var pricing = o.pricing === 'flat' ? 'flat' : 'per_seat';
+  function sync() {
+    $$('#layer .ps').forEach(function (e) { e.style.display = pricing === 'flat' ? 'none' : ''; });
+    $$('#layer .fl').forEach(function (e) { e.style.display = pricing === 'flat' ? '' : 'none'; });
+    var tot = pricing === 'flat' ? centsIn('ofF') || 0 : Math.round((parseInt(val('ofS'), 10) || 0) * (centsIn('ofU') || 0) * (1 - (Number(val('ofDc')) || 0) / 100));
+    $('#ofTot').innerHTML = 'Invoice total: <b>' + money(tot) + '</b>' + (pricing === 'per_seat' && (parseInt(val('ofS'), 10) || 0) > 0 ? ' (' + money(Math.round(tot / parseInt(val('ofS'), 10))) + ' per student)' : '');
+  }
+  $$('#ofPr button').forEach(function (b) { b.addEventListener('click', function () { pricing = b.dataset.v; $$('#ofPr button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); sync(); }); });
+  ['ofS', 'ofU', 'ofDc', 'ofF'].forEach(function (k) { $('#' + k).addEventListener('input', sync); });
+  $('#ofP').addEventListener('change', function () { var d = pds[$('#ofP').value]; if (d && isNew) { $('#ofU').value = d.seat_price_cents / 100; if (!val('ofL')) $('#ofL').value = d.label; } sync(); });
+  sync();
+  $('#ofSave').addEventListener('click', async function () {
+    if (!val('ofI')) { $('#ofErr').textContent = 'Enter the institution.'; return; }
+    var p = { id: isNew ? null : o.id, product: $('#ofP').value, course_id: val('ofC'), course_label: val('ofL'), term: val('ofT'), institution: val('ofI'), department: val('ofD'),
+      contact_name: val('ofCN'), contact_email: val('ofCE'), billing_address: $('#ofA').value.trim(), po_number: val('ofPO'), seats: parseInt(val('ofS'), 10) || 0,
+      pricing: pricing, unit_price_cents: centsIn('ofU') || 0, discount_pct: Number(val('ofDc')) || 0, flat_amount_cents: centsIn('ofF') || 0,
+      attribution_id: $('#ofAt').value, due_date: val('ofDue'), admin_notes: val('ofN'), grant_access: isNew ? $('#ofG').checked : false };
+    var btn = this; busy(btn, true);
+    var r = await sb.rpc('mp_admin_save_order', { p: p });
+    busy(btn, false);
+    if (r.error) { $('#ofErr').textContent = errMsg(r.error); return; }
+    closeLayer(); toast(isNew ? 'Order ' + r.data.number + ' created' + (r.data.access_note ? '. ' + r.data.access_note : '') : 'Saved');
+    await aOrders(); openOrder(r.data.id);
+  });
+}
+
+function orderPaymentModal(o, bal) {
+  openLayer('modal', 'Record a payment', esc(o.number) + ' · ' + esc(o.institution) + ' · ' + money(bal) + ' due',
+    '<div class="row2"><div class="field"><label class="f" for="opM">Method</label><select class="in" id="opM"><option value="check">Cheque</option><option value="ach">ACH / bank transfer</option><option value="wire">Wire transfer</option><option value="card">Card (outside Stripe)</option><option value="other">Other</option></select></div>' +
+    '<div class="field"><label class="f" for="opR">Reference</label><input class="in" id="opR" placeholder="Cheque or transfer number"></div></div>' +
+    '<div class="row2" style="grid-template-columns:1fr 1fr 1fr"><div class="field"><label class="f" for="opA">Amount ($)</label><input class="in" id="opA" type="number" step="0.01" value="' + (bal / 100) + '"></div><div class="field"><label class="f" for="opF">Bank fees ($)</label><input class="in" id="opF" type="number" step="0.01" min="0" value="0"></div><div class="field"><label class="f" for="opD">Received</label><input class="in" id="opD" type="date" value="' + isoDay(today()) + '"></div></div>' +
+    '<p class="hint">Online payments through Stripe are recorded automatically; use this for everything else. Enter a negative amount to record a refund.</p><p class="err" id="opErr" role="alert"></p>',
+    '<button class="btn" data-close>Cancel</button><button class="btn primary" id="opSave">Record payment</button>');
+  $$('#layer [data-close]').forEach(function (b) { b.addEventListener('click', closeLayer); });
+  $('#opSave').addEventListener('click', async function () {
+    var amt = centsIn('opA'); if (!amt) { $('#opErr').textContent = 'Enter the amount received.'; return; }
+    var btn = this; busy(btn, true);
+    var r = await sb.rpc('mp_admin_record_order_payment', { p_order: o.id, p_method: $('#opM').value, p_amount_cents: amt, p_fees_cents: centsIn('opF') || 0, p_reference: val('opR') || null, p_received: val('opD') || null });
+    busy(btn, false);
+    if (r.error) { $('#opErr').textContent = /mp_op_ref/.test(r.error.message) ? 'A payment with that reference is already recorded.' : errMsg(r.error); return; }
+    closeLayer(); toast('Payment of ' + money(amt) + ' recorded' + (r.data.ledger_id ? '; partner commission added' : '')); await aOrders(); openOrder(o.id);
+  });
+}
+
 async function aPayments() {
   loading(); adminBadges();
   var flt = S.cache.payFilter || 'credited';
@@ -1111,7 +1379,7 @@ async function aPayments() {
   var syncLine = st.last_ok
     ? 'Last checked ' + ago(st.last_ok) + (lc.payments_saved != null ? ' · ' + lc.payments_saved + ' payment' + (lc.payments_saved === 1 ? '' : 's') + ' read from Stripe' : '') + '. Checks again automatically every hour.'
     : 'Not checked yet. Use “Check Stripe now”, then it runs every hour on its own.';
-  var statusTag = { credited: '<span class="tag money">Credited</span>', course_not_credited: '<span class="tag amber">Course not credited</span>', unmatched: '<span class="tag warn">No course found</span>', outside_window: '<span class="tag">Outside window</span>', ignored: '<span class="tag">Set aside</span>', 'new': '<span class="tag">New</span>' };
+  var statusTag = { credited: '<span class="tag money">Credited</span>', course_not_credited: '<span class="tag amber">Course not credited</span>', unmatched: '<span class="tag warn">No course found</span>', outside_window: '<span class="tag">Outside window</span>', ignored: '<span class="tag">Set aside</span>', 'new': '<span class="tag">New</span>', institutional: '<span class="tag navy">Institutional order</span>' };
   var F = [['credited', 'Credited to partners'], ['open', 'Needs a look'], ['ignored', 'Set aside'], ['all', 'All']];
   var atOpts = '<option value="">Credit to…</option>' + ats.map(function (a) { return '<option value="' + a.id + '">' + esc(a.course_label) + ' (' + esc(firstName(names[a.partner_id] || '')) + ')</option>'; }).join('');
   setView('<div class="page-head"><div><h1>Stripe payments</h1><p>Student payments read from Stripe. Payments for courses credited to a partner earn commission automatically.</p></div><button class="btn primary" id="syncNow">Check Stripe now</button></div>' +
@@ -1211,8 +1479,8 @@ function resModal(x) {
 
 async function aSettings() {
   loading(); adminBadges();
-  var res = await Promise.all([sb.from('mp_settings').select('*').eq('id', 'default').maybeSingle(), sb.from('mp_agreement_templates').select('*').eq('kind', 'partner').eq('is_current', true).maybeSingle()]);
-  var s = res[0].data || {}, t = res[1].data || {};
+  var res = await Promise.all([sb.from('mp_settings').select('*').eq('id', 'default').maybeSingle(), sb.from('mp_agreement_templates').select('*').eq('kind', 'partner').eq('is_current', true).maybeSingle(), sb.from('mp_price_defaults').select('*').order('label')]);
+  var s = res[0].data || {}, t = res[1].data || {}, pds = res[2].data || [];
   S.settings = s;
   function p100(v) { return Math.round(Number(v) * 10000) / 100; }
   setView('<div class="page-head"><div><h1>Settings</h1><p>Program defaults apply to every partner without a custom rate. Changes affect courses credited from now on.</p></div></div>' +
@@ -1227,7 +1495,29 @@ async function aSettings() {
     '<div class="panel"><h2 style="font-size:22px">Partner agreement</h2><p class="hint" style="margin-top:0">Current version ' + esc(t.version) + '. Publishing creates a new version for future signers; signed copies never change. Fields like {{rate}}, {{partner_name}}, {{months}} are filled in per partner.</p>' +
     '<div class="field"><label class="f" for="agT">Title</label><input class="in" id="agT" value="' + esc(t.title) + '"></div>' +
     '<div class="field"><label class="f" for="agB">Text (lines starting with “## ” become section headings)</label><textarea class="in" id="agB" style="min-height:340px;font-size:13.5px">' + esc(t.body) + '</textarea></div>' +
-    '<div class="toolbar"><button class="btn" id="agPrev">Preview</button><button class="btn primary" id="agPub">Publish new version</button></div></div></div>');
+    '<div class="toolbar"><button class="btn" id="agPrev">Preview</button><button class="btn primary" id="agPub">Publish new version</button></div></div></div>' +
+    '<div class="panel" style="margin-top:20px"><h2 style="font-size:22px">Institutional billing</h2><p class="hint" style="margin-top:0">Used on institutional invoices. For online payment, create one Stripe payment link with <b>Customers choose what to pay</b> turned on (name it e.g. “MacroNations invoice payment”) and paste it here. Each invoice adds its own reference, so payments are matched to the right order automatically.</p>' +
+    '<div class="two" style="gap:20px"><div>' +
+    '<div class="field"><label class="f" for="ibL">Stripe payment link for invoices</label><input class="in" id="ibL" type="url" placeholder="https://buy.stripe.com/…" value="' + esc(s.inst_payment_link || '') + '"></div>' +
+    '<div class="field"><label class="f" for="ibT">Payment terms (days)</label><input class="in" id="ibT" type="number" min="0" value="' + esc(s.inst_terms_days) + '" style="max-width:140px"></div>' +
+    '<div class="field"><label class="f" for="ibC">Your details on the invoice</label><textarea class="in" id="ibC" style="min-height:90px">' + esc(s.inst_company_block || '') + '</textarea></div>' +
+    '<div class="field"><label class="f" for="ibR">How to pay (shown on the invoice)</label><textarea class="in" id="ibR" style="min-height:110px" placeholder="Bank name, routing and account number for ACH or wire; address for cheques">' + esc(s.inst_remit_text || '') + '</textarea><div class="hint">Add your bank transfer details and cheque address here.</div></div>' +
+    '<button class="btn primary" id="ibSave">Save billing settings</button></div>' +
+    '<div><span class="f" style="display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px">Default price per student</span><div class="table-wrap"><table class="t"><caption class="sr-only">Default prices</caption><thead><tr><th scope="col">Course</th><th scope="col" class="r">Institution, per student ($)</th></tr></thead><tbody>' +
+    pds.map(function (p) { return '<tr><td>' + esc(p.label) + '</td><td class="r"><input class="in num" data-pd="' + esc(p.product) + '" type="number" step="0.01" min="0" value="' + (p.seat_price_cents / 100) + '" style="max-width:120px;text-align:right;padding:6px 8px"></td></tr>'; }).join('') +
+    '</tbody></table></div><p class="hint">New orders start at this price. You can change the price, discount or switch to a flat licence on any order.</p></div></div></div>');
+  $('#ibSave').addEventListener('click', async function () {
+    var link = val('ibL');
+    if (link && !/^https:\/\//.test(link)) { toast('The payment link should start with https://', true); return; }
+    var r = await sb.from('mp_settings').update({ inst_payment_link: link || null, inst_terms_days: parseInt(val('ibT'), 10) || 30, inst_company_block: $('#ibC').value.trim(), inst_remit_text: $('#ibR').value.trim(), updated_at: new Date().toISOString() }).eq('id', 'default').select().maybeSingle();
+    if (r.error || !r.data) { toast(r.error ? errMsg(r.error) : 'Not saved', true); return; }
+    var errs = 0;
+    for (var i = 0; i < pds.length; i++) {
+      var el = $('[data-pd="' + pds[i].product + '"]'); var c = Math.round(Number(el.value) * 100);
+      if (c !== pds[i].seat_price_cents && c >= 0) { var u = await sb.from('mp_price_defaults').update({ seat_price_cents: c }).eq('product', pds[i].product); if (u.error) errs++; }
+    }
+    S.settings = r.data; toast(errs ? 'Saved, but some prices could not be updated' : 'Billing settings saved', !!errs);
+  });
   $('#stSave').addEventListener('click', async function () {
     var row = { default_rate: Number(val('stR')) / 100, tier_rate: Number(val('stTR')) / 100, tier_threshold: parseInt(val('stTT'), 10), attribution_months: parseInt(val('stM'), 10), lead_protection_days: parseInt(val('stP'), 10), min_payout_cents: Math.round(Number(val('stMin')) * 100), support_email: val('stE'), agreements_open: $('#stOpen').checked, updated_at: new Date().toISOString() };
     if (!(row.default_rate >= 0 && row.default_rate <= 1 && row.tier_rate >= 0 && row.tier_rate <= 1)) { toast('Rates must be between 0 and 100.', true); return; }

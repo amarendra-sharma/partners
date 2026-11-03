@@ -10,6 +10,9 @@ Run in order; each file is safe to re-run.
 2. `sql/mp-02-seed-agreement-toolkit.sql` — draft partner agreement v1 and starter toolkit.
 3. `sql/mp-03-phase2-revenue.sql` — Stripe payment mirror, automatic commission matching, refunds, new-course suggestions, partner-link landing page.
 4. `sql/mp-04-schedule-sync.sql` — hourly job (minute 17) that calls the `mp-stripe-sync` function.
+5. `sql/mp-05-institutional-orders.sql` — institutional billing: orders, invoices, seat tracking, payments, access switching.
+
+Always run them in this order; re-running an earlier file after a later one is safe for grants, but re-run the later files afterwards so their newer function versions win.
 
 `sql/mp-99-uninstall.sql` removes every `mp_` object. To stop the hourly job only: `select cron.unschedule('mp-stripe-sync');`
 
@@ -27,6 +30,14 @@ Run in order; each file is safe to re-run.
 4. Institutional invoices: **Courses & revenue → Record revenue**.
 
 Payments are matched by Stripe `client_reference_id`: `eq|student|course`, `student__course` (Strategy Arena family), a bare Intro Micro user id, or `<prefix>|student|course`. Payments that can't be matched appear under *Needs a look* and can be credited by hand. Partners never see student names or emails.
+
+## Institutional billing (a university or department pays)
+- **Request form:** `https://partners.macronations.com/?billing` (optionally `&product=im&course=<id>&title=…&term=…`). Anyone can request; you approve under **Institutional orders**. The Intro Micro console's course settings link to it pre-filled; other consoles get the same one-line link as they're updated.
+- **Approving** gives the section's students access straight away: Micro, Macro and International Trade get a course-wide fee waiver (note "Institutional order MN-…"); Econometrics has `requires_payment` turned off. Game Theory, Finance and Economics & Film live in the other Supabase project — set the section to free in that console.
+- **Invoice:** each order has an online invoice page (`?invoice=<token>`) to email, print or save as PDF, and pay.
+- **Paying online:** create one Stripe payment link with "Customers choose what to pay" on, and paste it in **Settings → Institutional billing**. Invoices add `client_reference_id=inst|<order id>`, so the hourly sync matches payments to orders automatically. Cheques, wires and ACH: **Record a payment** on the order.
+- **Seats:** enrolment is counted for Micro, Macro, International Trade and Econometrics. If it passes the paid seats, the order is flagged and you can invoice a top-up; students are never locked out.
+- **Partners:** payments on an order whose course is credited to a partner (or that you link to a partner credit) add commission automatically.
 
 ## Before partners can sign
 - Have counsel review the agreement (**Settings → Partner agreement**), then tick **Agreement signing open**.
